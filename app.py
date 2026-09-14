@@ -38,6 +38,23 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+st.markdown("""
+<style>
+    /* Estiliza o botão de acesso com a cor #7ed957 */
+    div.stButton > button {
+        background-color: #7ed957 !important;
+        color: #231f20 !important;
+        font-weight: bold !important;
+        border: none !important;
+        border-radius: 4px !important;
+    }
+    div.stButton > button:hover {
+        background-color: #6ec24c !important;
+        color: #ffffff !important;
+    }
+</style>
+""", unsafe_allow_html=True)
+
 
 # --- 2. CONTROLE DE SESSÃO E LOGIN ---
 if 'logged_in' not in st.session_state:
