@@ -1,10 +1,11 @@
 import streamlit as st
 import pandas as pd
+import os 
 import folium
 from streamlit_folium import st_folium
 
 # --- 1. CONFIGURAÇÃO DA PÁGINA E CSS (COR #231f20) ---
-st.set_page_config(page_title="SIGA - Gestão Assistencial", layout="wide")
+st.set_page_config(layout="wide")
 
 st.markdown("""
 <style>
@@ -37,7 +38,6 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-import os # Adicione este import lá no topo do arquivo junto com o pandas
 
 # --- 2. CONTROLE DE SESSÃO E LOGIN ---
 if 'logged_in' not in st.session_state:
@@ -45,18 +45,18 @@ if 'logged_in' not in st.session_state:
 
 if not st.session_state.logged_in:
     # Criação de 3 colunas para centralizar o conteúdo na coluna do meio
-    col1, col2, col3 = st.columns([1, 1.5, 1])[cite: 4]
+    col1, col2, col3 = st.columns([1, 1.5, 1])
     
     with col2:
-        # Blindagem: verifica se a imagem existe antes de tentar carregar[cite: 4]
+        # Blindagem: verifica se a imagem existe antes de tentar carregar
         try:
-            if os.path.exists("SIGA-LOGO.png"):[cite: 4]
+            if os.path.exists("SIGA-LOGO.png"):
                 # A imagem assume a largura da coluna perfeitamente
-                st.image("SIGA-LOGO.png", width="stretch")[cite: 15]
+                st.image("SIGA-LOGO.png", width="stretch")
             else:
-                st.warning("⚠️ Arquivo 'SIGA-LOGO.png' não encontrado no repositório.")[cite: 4]
+                st.warning("⚠️ Arquivo 'SIGA-LOGO.png' não encontrado no repositório.")
         except Exception:
-            st.markdown("<h1 style='text-align: center; color: #ffffff;'>⚓ SIGA</h1>", unsafe_allow_html=True)[cite: 4]
+            st.markdown("<h1 style='text-align: center; color: #ffffff;'>⚓ SIGA</h1>", unsafe_allow_html=True)
 
         st.markdown("<p style='text-align: center;'>Sistema Integrado de Gestão Assistencial</p>", unsafe_allow_html=True)
         
