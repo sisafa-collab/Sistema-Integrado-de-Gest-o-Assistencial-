@@ -40,9 +40,9 @@ st.markdown("""
 
 st.markdown("""
 <style>
-    /* Estiliza o botão de acesso com a cor #7ed957 */
+    /* Estiliza o botão de acesso */
     div.stButton > button {
-        background-color: #7ed957 !important;
+        background-color: #6c7d6c !important;
         color: #231f20 !important;
         font-weight: bold !important;
         border: none !important;
