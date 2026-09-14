@@ -37,30 +37,44 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+import os # Adicione este import lá no topo do arquivo junto com o pandas
+
 # --- 2. CONTROLE DE SESSÃO E LOGIN ---
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
 
 if not st.session_state.logged_in:
-    col1, col2, col3 = st.columns([1, 1.5, 1])
+    # Criação de 3 colunas para centralizar o conteúdo na coluna do meio
+    col1, col2, col3 = st.columns([1, 1.5, 1])[cite: 4]
+    
     with col2:
-        st.markdown("<h1 style='text-align: center; color: #ffffff;'>⚓ SIGA</h1>", unsafe_allow_html=True)
+        # Blindagem: verifica se a imagem existe antes de tentar carregar[cite: 4]
+        try:
+            if os.path.exists("SIGA-LOGO.png"):[cite: 4]
+                # A imagem assume a largura da coluna perfeitamente
+                st.image("SIGA-LOGO.png", width="stretch")[cite: 15]
+            else:
+                st.warning("⚠️ Arquivo 'SIGA-LOGO.png' não encontrado no repositório.")[cite: 4]
+        except Exception:
+            st.markdown("<h1 style='text-align: center; color: #ffffff;'>⚓ SIGA</h1>", unsafe_allow_html=True)[cite: 4]
+
         st.markdown("<p style='text-align: center;'>Sistema Integrado de Gestão Assistencial</p>", unsafe_allow_html=True)
         
-        cpf_input = st.text_input("CPF do Operador")
+        # Campos de entrada atualizados para NIP
+        nip_input = st.text_input("NIP do Operador")
         senha_input = st.text_input("Senha", type="password")
         
         if st.button("ACESSAR SISTEMA", use_container_width=True):
-            # Simulando uma validação no banco de dados para testes
-            if cpf_input == "123" and senha_input == "siga":
+            # Simulando validação inicial
+            if nip_input == "123" and senha_input == "siga":
                 st.session_state.logged_in = True
-                st.session_state.user_cpf = cpf_input
+                st.session_state.user_nip = nip_input
                 st.session_state.user_full_name = "Bruno Matheus França Figueiredo"
                 st.session_state.uasg_logada = "120000"
                 st.session_state.om_nome = "HOSPITAL NAVAL DE BRASÍLIA"
-                st.rerun() # Atualiza a tela após o login
+                st.rerun() 
             else:
-                st.error("Credenciais inválidas. (Para teste use CPF: 123 | Senha: siga)")
+                st.error("Credenciais inválidas. (Para teste use NIP: 123 | Senha: siga)")
 
 else:
     # --- 3. INTERFACE PRINCIPAL DO SISTEMA ---
