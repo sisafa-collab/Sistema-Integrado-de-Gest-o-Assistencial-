@@ -58,8 +58,6 @@ if not st.session_state.logged_in:
         except Exception:
             st.markdown("<h1 style='text-align: center; color: #ffffff;'>⚓ SIGA</h1>", unsafe_allow_html=True)
 
-        st.markdown("<p style='text-align: center;'>Sistema Integrado de Gestão Assistencial</p>", unsafe_allow_html=True)
-        
         # Campos de entrada atualizados para NIP
         nip_input = st.text_input("NIP do Operador")
         senha_input = st.text_input("Senha", type="password")
