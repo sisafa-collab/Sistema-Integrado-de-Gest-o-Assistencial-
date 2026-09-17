@@ -256,6 +256,13 @@ else:
             df_cap_hosp = pd.DataFrame(supabase.table("capacidade_hospitalar").select("uasg_hospital, id_capacidade").execute().data)
             df_cat = pd.DataFrame(supabase.table("capacidades_disponiveis").select("*").execute().data)
             
+            # 2. Gera o Mapa com servidor tático da ESRI (Fundo Base Escuro e Limpo)
+            m = folium.Map(
+                location=[-15.7906, -47.8920], 
+                zoom_start=11, 
+                tiles="https://services.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}",
+                attr="Esri, HERE, Garmin, FAO, NOAA, USGS"
+
             if not df_hosp.empty:
                 # Cruza as capacidades para saber o que cada hospital tem
                 if not df_cap_hosp.empty and not df_cat.empty:
