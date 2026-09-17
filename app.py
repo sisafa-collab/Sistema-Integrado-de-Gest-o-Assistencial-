@@ -153,9 +153,71 @@ else:
     ])
 
     with tab_capacidade:
-        st.subheader("Disponibilização de Vagas e Serviços")
-        st.info("Aqui sua OM irá cadastrar quantas consultas, exames e cirurgias pode oferecer às Forças coirmãs.")
-        # Espaço para o st.data_editor futuramente
+        st.markdown("<h3 style='color: #00E676; text-shadow: 0 0 10px rgba(0, 230, 118, 0.3);'>📝 Disponibilização de Vagas e Serviços</h3>", unsafe_allow_html=True)
+        st.info("Preencha os dias e horários das especialidades que sua OM pode oferecer. Deixe em branco o que não estiver disponível.")
+        
+        try:
+            # 1. Puxa o Catálogo Mestre de Especialidades
+            cat_res = supabase.table("capacidades_disponiveis").select("*").execute()
+            df_cat = pd.DataFrame(cat_res.data)
+            
+            # 2. Puxa as capacidades que este hospital já cadastrou anteriormente
+            hosp_res = supabase.table("capacidade_hospitalar").select("*").eq("uasg_hospital", st.session_state.uasg_logada).execute()
+            df_hosp = pd.DataFrame(hosp_res.data)
+            
+            # 3. Cruza os dados: Se o hospital já tem a capacidade, preenche; senão, deixa em branco
+            if not df_hosp.empty:
+                df_merged = pd.merge(df_cat, df_hosp, on="id_capacidade", how="left")
+                df_merged["dias_disponiveis"] = df_merged["dias_disponiveis"].fillna("")
+                df_merged["horarios_disponiveis"] = df_merged["horarios_disponiveis"].fillna("")
+            else:
+                df_merged = df_cat.copy()
+                df_merged["dias_disponiveis"] = ""
+                df_merged["horarios_disponiveis"] = ""
+                
+            # 4. Formata a tabela para exibição elegante no Streamlit
+            df_display = df_merged[["id_capacidade", "grupo_capacidade", "desc_capacidade", "dias_disponiveis", "horarios_disponiveis"]].copy()
+            df_display.columns = ["ID", "Grupo", "Especialidade", "Dias Disponíveis (Ex: Seg a Sex)", "Horários (Ex: 08h-12h)"]
+            
+            # 5. O Editor Interativo (O usuário edita direto na tela)
+            df_editado = st.data_editor(
+                df_display,
+                disabled=["ID", "Grupo", "Especialidade"], # Tranca as colunas mestras
+                hide_index=True,
+                use_container_width=True,
+                key="editor_capacidade"
+            )
+            
+            st.markdown("<br>", unsafe_allow_html=True)
+            
+            # 6. Botão de Salvamento em Lote com a identidade Neon do sistema
+            if st.button("💾 ATUALIZAR CAPACIDADES (SALVAR NO BANCO)", use_container_width=True):
+                with st.spinner("Sincronizando com a base central do Supabase..."):
+                    # Filtra apenas as linhas onde o SAME digitou alguma coisa
+                    df_validos = df_editado[(df_editado["Dias Disponíveis (Ex: Seg a Sex)"] != "") | (df_editado["Horários (Ex: 08h-12h)"] != "")]
+                    
+                    # Prepara a "tropa" de dados para enviar de uma vez só
+                    novas_capacidades = []
+                    for _, row in df_validos.iterrows():
+                        novas_capacidades.append({
+                            "uasg_hospital": st.session_state.uasg_logada,
+                            "id_capacidade": int(row["ID"]),
+                            "dias_disponiveis": str(row["Dias Disponíveis (Ex: Seg a Sex)"]),
+                            "horarios_disponiveis": str(row["Horários (Ex: 08h-12h)"])
+                        })
+                    
+                    # Limpa as capacidades antigas dessa OM e insere as novas atualizadas
+                    supabase.table("capacidade_hospitalar").delete().eq("uasg_hospital", st.session_state.uasg_logada).execute()
+                    
+                    if novas_capacidades:
+                        supabase.table("capacidade_hospitalar").insert(novas_capacidades).execute()
+                        
+                    st.success("✅ Grade de atendimento atualizada com sucesso no SIGA!")
+                    time.sleep(1.5) # Dá tempo para o usuário ler a mensagem de sucesso[cite: 2]
+                    st.rerun() # Recarrega a tela para blindar o cache[cite: 6]
+                    
+        except Exception as e:
+            st.error(f"Erro ao sincronizar com o banco de dados: {e}")
 
     with tab_mapa:
         st.subheader("Mapa Estratégico de Demandas")
