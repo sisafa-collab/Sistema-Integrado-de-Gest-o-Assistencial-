@@ -256,11 +256,12 @@ else:
             df_cap_hosp = pd.DataFrame(supabase.table("capacidade_hospitalar").select("uasg_hospital, id_capacidade").execute().data)
             df_cat = pd.DataFrame(supabase.table("capacidades_disponiveis").select("*").execute().data)
             
+            # Gera o Mapa com servidor tático da ESRI (Sem marcas d'água)
             m = folium.Map(
                 location=[-15.7906, -47.8920], 
                 zoom_start=11, 
-                tiles="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
-                attr="&copy; OpenStreetMap contributors &copy; CARTO"
+                tiles="https://services.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}",
+                attr="Esri, HERE, Garmin, FAO, NOAA, USGS"
             )
             
             if not df_hosp.empty:
@@ -324,18 +325,12 @@ else:
                     ).add_to(m)
 
             # Renderiza o mapa final no Streamlit
-            st_folium(m, width=900, height=500)
+            # Renderiza o mapa final preenchendo toda a tela e eliminando o vazio
+            st_folium(m, height=500, use_container_width=True)
 
         except Exception as e:
             st.error(f"Erro ao processar as coordenadas e capacidades: {e}")
 
-
-
-        # Renderiza o mapa no Streamlit
-        st_data = st_folium(m, width=900, height=500)
-        
-        if st.button("Simular Solicitação de Demanda"):
-            st.success("Demanda registrada e enviada à OM de destino (Status 1).")
 
     with tab_acompanhamento:
         st.subheader("Painel de Tramitação e PDFs")
