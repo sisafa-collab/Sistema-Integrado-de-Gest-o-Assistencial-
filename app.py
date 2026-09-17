@@ -6,6 +6,7 @@ from streamlit_folium import st_folium
 from supabase import create_client, Client
 import time    
 import datetime
+import base64
 
 # --- CONEXÃO COM O BANCO DE DADOS SUPABASE ---
 @st.cache_resource
@@ -255,8 +256,12 @@ else:
             df_cap_hosp = pd.DataFrame(supabase.table("capacidade_hospitalar").select("uasg_hospital, id_capacidade").execute().data)
             df_cat = pd.DataFrame(supabase.table("capacidades_disponiveis").select("*").execute().data)
             
-            # 2. Gera o Mapa com visual escuro tático (Radar)
-            m = folium.Map(location=[-15.7906, -47.8920], zoom_start=11, tiles="cartodbdark_matter")
+            m = folium.Map(
+                location=[-15.7906, -47.8920], 
+                zoom_start=11, 
+                tiles="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+                attr="&copy; OpenStreetMap contributors &copy; CARTO"
+            )
             
             if not df_hosp.empty:
                 # Cruza as capacidades para saber o que cada hospital tem
