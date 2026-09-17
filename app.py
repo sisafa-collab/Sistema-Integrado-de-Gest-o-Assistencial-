@@ -153,69 +153,94 @@ else:
     ])
 
     with tab_capacidade:
-        st.markdown("<h3 style='color: #00E676; text-shadow: 0 0 10px rgba(0, 230, 118, 0.3);'>📝 Disponibilização de Vagas e Serviços</h3>", unsafe_allow_html=True)
-        st.info("Preencha os dias e horários das especialidades que sua OM pode oferecer. Deixe em branco o que não estiver disponível.")
+        st.markdown("<h3 style='color: #00E676; text-shadow: 0 0 10px rgba(0, 230, 118, 0.3);'>📝 Gestão Dinâmica de Agenda</h3>", unsafe_allow_html=True)
+        st.info("Siga o fluxo para disponibilizar horários. O sistema só habilitará o próximo passo após a seleção anterior.")
         
         try:
-            # 1. Puxa o Catálogo Mestre de Especialidades
+            # 1. Puxa o Catálogo Mestre apenas uma vez para não gastar requisições
             cat_res = supabase.table("capacidades_disponiveis").select("*").execute()
             df_cat = pd.DataFrame(cat_res.data)
             
-            # 2. Puxa as capacidades que este hospital já cadastrou anteriormente
+            if not df_cat.empty:
+                # --- FLUXO EM CASCATA ---
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    grupos = df_cat['grupo_capacidade'].unique()
+                    grupo_sel = st.selectbox("1️⃣ Selecione o Grupo:", [""] + list(grupos))
+                    
+                with col2:
+                    if grupo_sel:
+                        especialidades = df_cat[df_cat['grupo_capacidade'] == grupo_sel]['desc_capacidade'].unique()
+                        espec_sel = st.selectbox("2️⃣ Selecione a Especialidade:", [""] + list(especialidades))
+                    else:
+                        st.selectbox("2️⃣ Selecione a Especialidade:", ["Aguardando seleção do grupo..."], disabled=True)
+                        espec_sel = ""
+
+                # Só libera o calendário e os horários se a especialidade foi escolhida
+                if espec_sel:
+                    col3, col4 = st.columns([1, 2])
+                    with col3:
+                        data_sel = st.date_input("3️⃣ Selecione o Dia:")
+                        
+                    with col4:
+                        # Motor de Intervalos (Gera horários das 08:00 às 18:00 de 20 em 20 minutos)
+                        start_time = datetime.datetime.strptime("08:00", "%H:%M")
+                        end_time = datetime.datetime.strptime("18:00", "%H:%M")
+                        horarios_disponiveis = []
+                        
+                        while start_time <= end_time:
+                            horarios_disponiveis.append(start_time.strftime("%H:%M"))
+                            start_time += datetime.timedelta(minutes=20)
+                            
+                        horarios_sel = st.multiselect("4️⃣ Selecione os Horários Disponíveis:", horarios_disponiveis)
+                        
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    
+                    # Botão de Salvamento com estilo Neon (CSS já embutido no projeto)
+                    if st.button("💾 ATUALIZAR CAPACIDADES (SALVAR NO BANCO)", use_container_width=True):
+                        if horarios_sel:
+                            with st.spinner("Sincronizando com a base central do Supabase..."):
+                                # Acha o ID exato da especialidade escolhida
+                                id_cap = df_cat[(df_cat['grupo_capacidade'] == grupo_sel) & (df_cat['desc_capacidade'] == espec_sel)]['id_capacidade'].values[0]
+                                
+                                # Prepara os dados para o banco
+                                data_formatada = data_sel.strftime("%d/%m/%Y")
+                                horarios_texto = ", ".join(horarios_sel)
+                                
+                                nova_capacidade = {
+                                    "uasg_hospital": st.session_state.uasg_logada,
+                                    "id_capacidade": int(id_cap),
+                                    "dias_disponiveis": data_formatada,
+                                    "horarios_disponiveis": horarios_texto
+                                }
+                                
+                                supabase.table("capacidade_hospitalar").insert(nova_capacidade).execute()
+                                
+                                st.success(f"✅ Agenda de {espec_sel} para o dia {data_formatada} registrada com sucesso!")
+                                time.sleep(1.5)
+                                st.rerun() 
+                        else:
+                            st.warning("⚠️ Selecione pelo menos um horário no passo 4 antes de atualizar.")
+
+            # --- PAINEL DE CONSOLIDAÇÃO (Abaixo do formulário) ---
+            st.divider()
+            st.markdown("<h4 style='color: #f8f9fa;'>📋 Minha Grade Cadastrada Atualmente</h4>", unsafe_allow_html=True)
+            
+            # Puxa o que a OM já tem cadastrado no banco para mostrar ao operador
             hosp_res = supabase.table("capacidade_hospitalar").select("*").eq("uasg_hospital", st.session_state.uasg_logada).execute()
             df_hosp = pd.DataFrame(hosp_res.data)
             
-            # 3. Cruza os dados: Se o hospital já tem a capacidade, preenche; senão, deixa em branco
             if not df_hosp.empty:
-                df_merged = pd.merge(df_cat, df_hosp, on="id_capacidade", how="left")
-                df_merged["dias_disponiveis"] = df_merged["dias_disponiveis"].fillna("")
-                df_merged["horarios_disponiveis"] = df_merged["horarios_disponiveis"].fillna("")
-            else:
-                df_merged = df_cat.copy()
-                df_merged["dias_disponiveis"] = ""
-                df_merged["horarios_disponiveis"] = ""
+                # Cruza com o catálogo para pegar os nomes ao invés dos IDs
+                df_merged = pd.merge(df_hosp, df_cat, on="id_capacidade", how="inner")
+                df_display = df_merged[["grupo_capacidade", "desc_capacidade", "dias_disponiveis", "horarios_disponiveis"]]
+                df_display.columns = ["Grupo", "Especialidade", "Data", "Horários Reservados"]
                 
-            # 4. Formata a tabela para exibição elegante no Streamlit
-            df_display = df_merged[["id_capacidade", "grupo_capacidade", "desc_capacidade", "dias_disponiveis", "horarios_disponiveis"]].copy()
-            df_display.columns = ["ID", "Grupo", "Especialidade", "Dias Disponíveis (Ex: Seg a Sex)", "Horários (Ex: 08h-12h)"]
-            
-            # 5. O Editor Interativo (O usuário edita direto na tela)
-            df_editado = st.data_editor(
-                df_display,
-                disabled=["ID", "Grupo", "Especialidade"], # Tranca as colunas mestras
-                hide_index=True,
-                use_container_width=True,
-                key="editor_capacidade"
-            )
-            
-            st.markdown("<br>", unsafe_allow_html=True)
-            
-            # 6. Botão de Salvamento em Lote com a identidade Neon do sistema
-            if st.button("💾 ATUALIZAR CAPACIDADES (SALVAR NO BANCO)", use_container_width=True):
-                with st.spinner("Sincronizando com a base central do Supabase..."):
-                    # Filtra apenas as linhas onde o SAME digitou alguma coisa
-                    df_validos = df_editado[(df_editado["Dias Disponíveis (Ex: Seg a Sex)"] != "") | (df_editado["Horários (Ex: 08h-12h)"] != "")]
-                    
-                    # Prepara a "tropa" de dados para enviar de uma vez só
-                    novas_capacidades = []
-                    for _, row in df_validos.iterrows():
-                        novas_capacidades.append({
-                            "uasg_hospital": st.session_state.uasg_logada,
-                            "id_capacidade": int(row["ID"]),
-                            "dias_disponiveis": str(row["Dias Disponíveis (Ex: Seg a Sex)"]),
-                            "horarios_disponiveis": str(row["Horários (Ex: 08h-12h)"])
-                        })
-                    
-                    # Limpa as capacidades antigas dessa OM e insere as novas atualizadas
-                    supabase.table("capacidade_hospitalar").delete().eq("uasg_hospital", st.session_state.uasg_logada).execute()
-                    
-                    if novas_capacidades:
-                        supabase.table("capacidade_hospitalar").insert(novas_capacidades).execute()
-                        
-                    st.success("✅ Grade de atendimento atualizada com sucesso no SIGA!")
-                    time.sleep(1.5) # Dá tempo para o usuário ler a mensagem de sucesso[cite: 2]
-                    st.rerun() # Recarrega a tela para blindar o cache[cite: 6]
-                    
+                st.dataframe(df_display, use_container_width=True, hide_index=True)
+            else:
+                st.info("Sua OM ainda não disponibilizou vagas no sistema.")
+                
         except Exception as e:
             st.error(f"Erro ao sincronizar com o banco de dados: {e}")
 
