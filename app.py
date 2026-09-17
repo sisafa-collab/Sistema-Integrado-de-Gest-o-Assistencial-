@@ -4,7 +4,8 @@ import os
 import folium
 from streamlit_folium import st_folium
 from supabase import create_client, Client
-
+import time    
+import datetime
 
 # --- CONEXÃO COM O BANCO DE DADOS SUPABASE ---
 @st.cache_resource
