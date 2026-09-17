@@ -246,25 +246,85 @@ else:
             st.error(f"Erro ao sincronizar com o banco de dados: {e}")
 
     with tab_mapa:
-        st.subheader("Mapa Estratégico de Demandas")
-        st.write("Selecione um Hospital Militar no mapa para verificar capacidades e agendar demandas.")
+        st.markdown("<h3 style='color: #00E676; text-shadow: 0 0 10px rgba(0, 230, 118, 0.3);'>🗺️ Radar de Demandas Assistenciais</h3>", unsafe_allow_html=True)
+        st.write("Clique nos escudos das Forças para visualizar o endereço e as especialidades ativas.")
         
-        # Gerador do Mapa Interativo com Folium
-        m = folium.Map(location=[-15.7906, -47.8920], zoom_start=12) # Coordenadas centrais de Brasília
-        
-        # Marcador de exemplo (HFAB)
-        folium.Marker(
-            [-15.8658, -47.8860], 
-            popup="Hospital de Força Aérea de Brasília (HFAB)", 
-            tooltip="Clique para ver capacidades"
-        ).add_to(m)
-        
-        # Marcador de exemplo (HNBra)
-        folium.Marker(
-            [-15.8080, -47.8800], 
-            popup="Hospital Naval de Brasília (HNBra)", 
-            tooltip="Clique para ver capacidades"
-        ).add_to(m)
+        try:
+            # 1. Puxa as tabelas necessárias
+            df_hosp = pd.DataFrame(supabase.table("hospitais").select("*").execute().data)
+            df_cap_hosp = pd.DataFrame(supabase.table("capacidade_hospitalar").select("uasg_hospital, id_capacidade").execute().data)
+            df_cat = pd.DataFrame(supabase.table("capacidades_disponiveis").select("*").execute().data)
+            
+            # 2. Gera o Mapa com visual escuro tático (Radar)
+            m = folium.Map(location=[-15.7906, -47.8920], zoom_start=11, tiles="cartodbdark_matter")
+            
+            if not df_hosp.empty:
+                # Cruza as capacidades para saber o que cada hospital tem
+                if not df_cap_hosp.empty and not df_cat.empty:
+                    df_cruzamento = pd.merge(df_cap_hosp, df_cat, on="id_capacidade")
+                else:
+                    df_cruzamento = pd.DataFrame(columns=["uasg_hospital", "desc_capacidade"])
+
+                # 3. Laço para criar um marcador para cada Hospital do Banco
+                for _, row in df_hosp.iterrows():
+                    forca = str(row['forca']).strip().upper()
+                    
+                    # Define qual logo usar
+                    if forca == "MARINHA": logo_file = "MARINHA-LOGO.png"
+                    elif forca == "EXERCITO": logo_file = "EXERCITO-LOGO.png"
+                    elif forca == "AERONAUTICA": logo_file = "AERONAUTICA-LOGO.png"
+                    else: logo_file = "SIGA-LOGO.png"
+                    
+                    # Filtra apenas as especialidades DESTE hospital sem repetição
+                    especialidades = df_cruzamento[df_cruzamento['uasg_hospital'] == row['uasg']]['desc_capacidade'].unique()
+                    if len(especialidades) > 0:
+                        lista_html = "".join([f"<li style='margin-bottom:4px;'>🔹 {esp}</li>" for esp in especialidades])
+                    else:
+                        lista_html = "<li style='color: #ff4b4b;'>Nenhuma capacidade cadastrada no momento.</li>"
+
+                    # Transforma a imagem em código para não quebrar dentro do popup do Folium
+                    b64_img = ""
+                    if os.path.exists(logo_file):
+                        with open(logo_file, "rb") as f:
+                            b64_img = base64.b64encode(f.read()).decode()
+                            
+                    img_tag = f"<img src='data:image/png;base64,{b64_img}' style='max-height: 55px; display: block; margin: 0 auto;'>" if b64_img else f"<h3 style='text-align:center;'>{forca}</h3>"
+
+                    # 4. Estrutura HTML/CSS do Popup (O Dossiê Tecnológico)
+                    html_popup = f"""
+                    <div style="font-family: Arial, sans-serif; min-width: 240px; background-color: #1a1a1a; padding: 15px; border-radius: 8px; border: 1px solid #00E676; box-shadow: 0 0 15px rgba(0, 230, 118, 0.4);">
+                        {img_tag}
+                        <h4 style="text-align: center; color: #ffffff; margin: 12px 0 5px 0; font-weight: 900; letter-spacing: 1px;">{row['nome']}</h4>
+                        <p style="font-size: 11px; color: #aaaaaa; margin: 0 0 15px 0; text-align: center; font-style: italic;">📍 {row['endereco']}</p>
+                        <div style="background-color: #231f20; padding: 10px; border-radius: 5px; border-left: 3px solid #00E676;">
+                            <h5 style="margin: 0 0 10px 0; color: #00E676; font-size: 11px; letter-spacing: 1px;">ESPECIALIDADES DISPONÍVEIS:</h5>
+                            <ul style="font-size: 11px; color: #e0e0e0; padding-left: 15px; margin: 0; list-style-type: none;">
+                                {lista_html}
+                            </ul>
+                        </div>
+                    </div>
+                    """
+                    
+                    # 5. Adiciona o ícone real no mapa e vincula o popup
+                    if os.path.exists(logo_file):
+                        icone_mapa = folium.CustomIcon(logo_file, icon_size=(45, 45))
+                    else:
+                        icone_mapa = folium.Icon(color="green", icon="info-sign")
+
+                    folium.Marker(
+                        [float(row['latitude']), float(row['longitude'])],
+                        popup=folium.Popup(html_popup, max_width=320),
+                        icon=icone_mapa,
+                        tooltip=f"Ver Portfólio: {row['nome']}"
+                    ).add_to(m)
+
+            # Renderiza o mapa final no Streamlit
+            st_folium(m, width=900, height=500)
+
+        except Exception as e:
+            st.error(f"Erro ao processar as coordenadas e capacidades: {e}")
+
+
 
         # Renderiza o mapa no Streamlit
         st_data = st_folium(m, width=900, height=500)
