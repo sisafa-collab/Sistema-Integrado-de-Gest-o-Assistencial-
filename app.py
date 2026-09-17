@@ -3,6 +3,17 @@ import pandas as pd
 import os 
 import folium
 from streamlit_folium import st_folium
+from supabase import create_client, Client
+
+
+# --- CONEXÃO COM O BANCO DE DADOS SUPABASE ---
+@st.cache_resource
+def iniciar_conexao():
+    url = st.secrets["SUPABASE_URL"]
+    key = st.secrets["SUPABASE_KEY"]
+    return create_client(url, key)
+
+supabase: Client = iniciar_conexao()
 
 # --- 1. CONFIGURAÇÃO DA PÁGINA E CSS (COR #231f20) ---
 st.set_page_config(layout="wide")
