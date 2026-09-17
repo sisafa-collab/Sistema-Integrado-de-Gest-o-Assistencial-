@@ -256,25 +256,6 @@ else:
             df_cap_hosp = pd.DataFrame(supabase.table("capacidade_hospitalar").select("uasg_hospital, id_capacidade").execute().data)
             df_cat = pd.DataFrame(supabase.table("capacidades_disponiveis").select("*").execute().data)
             
-            # Gera o Mapa com servidor tático da ESRI (Sem marcas d'água)
-            m = folium.Map(
-                location=[-15.7906, -47.8920], 
-                zoom_start=11, 
-                tiles="https://services.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}",
-                attr="Esri, HERE, Garmin, FAO, NOAA, USGS"
-            )
-            
-            # 🎨 INJEÇÃO DE CSS NO MOTOR DO MAPA (Efeito Verde Neon nas Fronteiras e Linhas)
-            html_neon = """
-            <style>
-                /* Altera a cor das linhas de rua e fronteiras que o mapa escuro usa por padrão */
-                .leaflet-layer {
-                    filter: invert(15%) sepia(85%) saturate(3000%) hue-rotate(90deg) brightness(110%) contrast(110%);
-                }
-            </style>
-            """
-            m.get_root().html.add_child(folium.Element(html_neon))
-
             if not df_hosp.empty:
                 # Cruza as capacidades para saber o que cada hospital tem
                 if not df_cap_hosp.empty and not df_cat.empty:
