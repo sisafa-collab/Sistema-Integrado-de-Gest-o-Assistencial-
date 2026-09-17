@@ -264,6 +264,17 @@ else:
                 attr="Esri, HERE, Garmin, FAO, NOAA, USGS"
             )
             
+            # 🎨 INJEÇÃO DE CSS NO MOTOR DO MAPA (Efeito Verde Neon nas Fronteiras e Linhas)
+            html_neon = """
+            <style>
+                /* Altera a cor das linhas de rua e fronteiras que o mapa escuro usa por padrão */
+                .leaflet-layer {
+                    filter: invert(15%) sepia(85%) saturate(3000%) hue-rotate(90deg) brightness(110%) contrast(110%);
+                }
+            </style>
+            """
+            m.get_root().html.add_child(folium.Element(html_neon))
+
             if not df_hosp.empty:
                 # Cruza as capacidades para saber o que cada hospital tem
                 if not df_cap_hosp.empty and not df_cat.empty:
