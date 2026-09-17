@@ -262,6 +262,7 @@ else:
                 zoom_start=11, 
                 tiles="https://services.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}",
                 attr="Esri, HERE, Garmin, FAO, NOAA, USGS"
+            )    
 
             if not df_hosp.empty:
                 # Cruza as capacidades para saber o que cada hospital tem
