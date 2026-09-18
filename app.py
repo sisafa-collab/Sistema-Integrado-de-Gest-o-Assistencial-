@@ -25,12 +25,18 @@ st.markdown("""
     /* Força o fundo escuro e o texto claro na aplicação inteira */
     [data-testid="stAppViewContainer"] {
         background-color: #231f20;
-        color: #f8f9fa;
+        color: #00E676 !important;
     }
     [data-testid="stHeader"] {
         background-color: #231f20;
     }
     
+    /* Faz as letras do sistema (Títulos e Textos) brilharem em Verde Neon */
+    h1, h2, h3, h4, h5, h6, p, label {
+        color: #00E676 !important;
+        text-shadow: 0 0 8px rgba(0, 230, 118, 0.4) !important;
+    }
+
     /* Estiliza as abas para combinarem com o fundo escuro */
     .stTabs [data-baseweb="tab-list"] {
         gap: 24px;
@@ -144,6 +150,54 @@ else:
     # --- 3. INTERFACE PRINCIPAL DO SISTEMA ---
     st.markdown(f"### 🏥 {st.session_state.om_nome} | Operador: {st.session_state.user_full_name}")
     st.divider()
+
+    # Botão para expandir/ocultar o painel de informações pessoais
+    if st.button("⚙️ ALTERAR INFORMAÇÕES PESSOAIS", use_container_width=True):
+        st.session_state.editando_perfil = not st.session_state.get('editando_perfil', False)
+
+    # Se o botão foi clicado, abre o formulário
+    if st.session_state.get('editando_perfil', False):
+        try:
+            # Busca os dados atualizados direto do Supabase
+            resposta_user = supabase.table("usuarios").select("*").eq("cpf", st.session_state.user_nip).execute()
+            dados_user = resposta_user.data[0]
+
+            with st.form("form_atualizacao_perfil"):
+                st.markdown("#### 🔒 Atualização de Cadastro")
+                
+                col_bloqueada, col_editavel = st.columns(2)
+                
+                with col_bloqueada:
+                    st.text_input("CPF", value=dados_user['cpf'], disabled=True)
+                    st.text_input("UASG", value=dados_user['uasg'], disabled=True)
+                    st.text_input("Organização Militar", value=dados_user['nome_om'], disabled=True)
+                    st.text_input("Perfil de Acesso", value=dados_user['perfil'], disabled=True)
+
+                with col_editavel:
+                    novo_nome = st.text_input("Nome Completo", value=dados_user['nome_completo'])
+                    novo_email = st.text_input("E-mail", value=dados_user.get('email', ''))
+                    novo_telefone = st.text_input("Telefone", value=dados_user.get('telefone', ''))
+                    nova_senha = st.text_input("Senha", value=dados_user['senha'], type="password")
+
+                if st.form_submit_button("💾 SALVAR NOVOS DADOS", use_container_width=True):
+                    # Faz o envio (UPDATE) para o Supabase com os campos permitidos
+                    supabase.table("usuarios").update({
+                        "nome_completo": novo_nome,
+                        "email": novo_email,
+                        "telefone": novo_telefone,
+                        "senha": nova_senha
+                    }).eq("cpf", st.session_state.user_nip).execute()
+
+                    # Atualiza a memória local para mudar o nome no topo da tela instantaneamente
+                    st.session_state.user_full_name = novo_nome
+                    
+                    st.success("✅ Informações atualizadas com sucesso no banco de dados!")
+                    time.sleep(1.5)
+                    st.session_state.editando_perfil = False # Esconde o formulário
+                    st.rerun() # Atualiza a tela
+
+        except Exception as e:
+            st.error(f"Erro ao buscar informações no banco: {e}")
 
     # Criação das 5 abas operacionais
     tab_capacidade, tab_mapa, tab_acompanhamento, tab_indicadores, tab_contato = st.tabs([
