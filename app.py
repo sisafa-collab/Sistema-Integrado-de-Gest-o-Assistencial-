@@ -337,7 +337,7 @@ else:
 
     with tab_mapa:
         st.markdown("<h3 style='color: #00E676; text-shadow: 0 0 10px rgba(0, 230, 118, 0.3);'>🗺️ Radar de Demandas Assistenciais</h3>", unsafe_allow_html=True)
-        st.write("Clique nos escudos das Forças para visualizar o endereço e as especialidades ativas.")
+        st.write("Clique nos escudos das Forças para visualizar o portfólio e abrir o painel de solicitação.")
         
         try:
             # 1. Puxa as tabelas necessárias
@@ -345,7 +345,7 @@ else:
             df_cap_hosp = pd.DataFrame(supabase.table("capacidade_hospitalar").select("uasg_hospital, id_capacidade").execute().data)
             df_cat = pd.DataFrame(supabase.table("capacidades_disponiveis").select("*").execute().data)
             
-            # 2. Gera o Mapa com servidor tático da ESRI (Fundo Base Escuro e Limpo)
+            # 2. Gera o Mapa com servidor tático da ESRI
             m = folium.Map(
                 location=[-15.7906, -47.8920], 
                 zoom_start=11, 
@@ -354,7 +354,6 @@ else:
             )    
 
             if not df_hosp.empty:
-                # Cruza as capacidades para saber o que cada hospital tem
                 if not df_cap_hosp.empty and not df_cat.empty:
                     df_cruzamento = pd.merge(df_cap_hosp, df_cat, on="id_capacidade")
                 else:
@@ -364,20 +363,17 @@ else:
                 for _, row in df_hosp.iterrows():
                     forca = str(row['forca']).strip().upper()
                     
-                    # Define qual logo usar
                     if forca == "MARINHA": logo_file = "MARINHA-LOGO.png"
                     elif forca == "EXERCITO": logo_file = "EXERCITO-LOGO.png"
                     elif forca == "AERONAUTICA": logo_file = "AERONAUTICA-LOGO.png"
                     else: logo_file = "SIGA-LOGO.png"
                     
-                    # Filtra apenas as especialidades DESTE hospital sem repetição
                     especialidades = df_cruzamento[df_cruzamento['uasg_hospital'] == row['uasg']]['desc_capacidade'].unique()
                     if len(especialidades) > 0:
                         lista_html = "".join([f"<li style='margin-bottom:4px;'>🔹 {esp}</li>" for esp in especialidades])
                     else:
                         lista_html = "<li style='color: #ff4b4b;'>Nenhuma capacidade cadastrada no momento.</li>"
 
-                    # Transforma a imagem em código para não quebrar dentro do popup do Folium
                     b64_img = ""
                     if os.path.exists(logo_file):
                         with open(logo_file, "rb") as f:
@@ -385,7 +381,6 @@ else:
                             
                     img_tag = f"<img src='data:image/png;base64,{b64_img}' style='max-height: 55px; display: block; margin: 0 auto;'>" if b64_img else f"<h3 style='text-align:center;'>{forca}</h3>"
 
-                    # 4. Estrutura HTML/CSS do Popup (O Dossiê Tecnológico)
                     html_popup = f"""
                     <div style="font-family: Arial, sans-serif; min-width: 240px; background-color: #1a1a1a; padding: 15px; border-radius: 8px; border: 1px solid #00E676; box-shadow: 0 0 15px rgba(0, 230, 118, 0.4);">
                         {img_tag}
@@ -400,17 +395,17 @@ else:
                     </div>
                     """
                     
-                    # 5. Adiciona o ícone real no mapa e vincula o popup
                     if os.path.exists(logo_file):
                         icone_mapa = folium.CustomIcon(logo_file, icon_size=(45, 45))
                     else:
                         icone_mapa = folium.Icon(color="green", icon="info-sign")
 
+                    # O SEGREDO TÁTICO: Colocamos a UASG no tooltip (oculto visualmente no clique, mas o Python lê)
                     folium.Marker(
                         [float(row['latitude']), float(row['longitude'])],
                         popup=folium.Popup(html_popup, max_width=320),
                         icon=icone_mapa,
-                        tooltip=f"Ver Portfólio: {row['nome']}"
+                        tooltip=f"{row['uasg']} | {row['nome']}" 
                     ).add_to(m)
 
             # 4. Renderiza o mapa e CAPTURA O CLIQUE DO USUÁRIO
