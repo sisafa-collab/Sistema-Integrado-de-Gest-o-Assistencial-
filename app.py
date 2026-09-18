@@ -413,12 +413,83 @@ else:
                         tooltip=f"Ver Portfólio: {row['nome']}"
                     ).add_to(m)
 
-            # Renderiza o mapa final no Streamlit
-            # Renderiza o mapa final preenchendo toda a tela e eliminando o vazio
-            st_folium(m, height=500, use_container_width=True)
+            # 4. Renderiza o mapa e CAPTURA O CLIQUE DO USUÁRIO
+            dados_mapa = st_folium(m, height=500, use_container_width=True)
+
+            # =================================================================
+            # 5. PAINEL INFERIOR: GATILHO DE SOLICITAÇÃO DE CONSULTA
+            # =================================================================
+            if dados_mapa and dados_mapa.get("last_object_clicked_tooltip"):
+                info_clique = dados_mapa["last_object_clicked_tooltip"]
+                
+                if "|" in info_clique:
+                    uasg_alvo = info_clique.split("|")[0].strip()
+                    nome_alvo = info_clique.split("|")[1].strip()
+
+                    st.divider()
+                    
+                    # Bloqueia a OM de pedir consulta para si mesma
+                    if uasg_alvo == st.session_state.uasg_logada:
+                        st.info(f"⚓ Você clicou em sua própria Organização Militar ({nome_alvo}).")
+                    else:
+                        st.markdown(f"<h3 style='color: #00E676;'>🎯 Solicitar Atendimento: {nome_alvo}</h3>", unsafe_allow_html=True)
+                        
+                        # Descobre as especialidades do hospital clicado
+                        especialidades_alvo = df_cruzamento[df_cruzamento['uasg_hospital'] == uasg_alvo]['desc_capacidade'].unique()
+                        
+                        if len(especialidades_alvo) > 0:
+                            # Formulário de Cadastro da Demanda
+                            with st.form(key="form_solicitacao"):
+                                esp_selecionada = st.selectbox("1️⃣ Especialidade Necessária:", especialidades_alvo)
+                                
+                                # O chat inicial
+                                texto_chat = st.text_area("2️⃣ Mensagem Inicial (Chat):", placeholder="Ex: Paciente 3ºSG MB com indicação cirúrgica. Necessita de consulta com brevidade. Seguem documentos...")
+                                
+                                # Botão Verde Neon (Puxa o CSS global automaticamente)
+                                submit = st.form_submit_button("🟢 SOLICITAR CONSULTA (CADASTRAR DEMANDA)", use_container_width=True)
+                                
+                                if submit:
+                                    if texto_chat.strip() == "":
+                                        st.warning("⚠️ Escreva uma mensagem inicial no chat para que a OM de destino possa analisar seu pedido.")
+                                    else:
+                                        with st.spinner("Registrando demanda no SIGA..."):
+                                            # PASSO A: Cadastra na Tabela "demandas"
+                                            nova_demanda = {
+                                                "uasg_origem": st.session_state.uasg_logada,
+                                                "uasg_destino": uasg_alvo,
+                                                "especialidade": esp_selecionada,
+                                                "status": 1
+                                            }
+                                            resposta_demanda = supabase.table("demandas").insert(nova_demanda).execute()
+                                            
+                                            # Pega o ID gerado pelo banco para a nova demanda
+                                            id_gerado = resposta_demanda.data[0]['id_demanda']
+                                            
+                                            # PASSO B: Cadastra na Tabela "mensagens_chat"
+                                            nova_mensagem = {
+                                                "id_demanda": id_gerado,
+                                                "uasg_remetente": st.session_state.uasg_logada,
+                                                "texto": texto_chat
+                                            }
+                                            supabase.table("mensagens_chat").insert(nova_mensagem).execute()
+                                            
+                                            # PASSO C: Cadastra na Tabela "logs_demandas"
+                                            novo_log = {
+                                                "id_demanda": id_gerado,
+                                                "status_anterior": 0, # Zero significa "Criação"
+                                                "status_novo": 1,
+                                                "cpf_operador": st.session_state.user_nip
+                                            }
+                                            supabase.table("logs_demandas").insert(novo_log).execute()
+                                            
+                                            st.success(f"✅ Demanda #{id_gerado} protocolada com sucesso! Acompanhe o andamento na aba (iii) Acompanhamento.")
+                                            time.sleep(2)
+                                            st.rerun()
+                        else:
+                            st.warning(f"⚠️ {nome_alvo} ainda não cadastrou vagas para as coirmãs.")
 
         except Exception as e:
-            st.error(f"Erro ao processar as coordenadas e capacidades: {e}")
+            st.error(f"Erro na matriz do mapa ou comunicação com banco: {e}")
 
 
     with tab_acompanhamento:
