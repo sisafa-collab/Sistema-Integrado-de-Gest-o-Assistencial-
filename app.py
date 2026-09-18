@@ -24,9 +24,13 @@ st.markdown("""
 <style>
     /* Força o fundo escuro e o texto claro na aplicação inteira */
     [data-testid="stAppViewContainer"] {
-        background-color: #231f20;
+    [data-testid="stSidebar"], 
+    [data-testid="stSidebar"] > div:first-child {
+        background-color: #231f20 !important;
         color: #00E676 !important;
     }
+    
+    
     [data-testid="stHeader"] {
         background-color: #231f20;
     }
