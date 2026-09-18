@@ -31,6 +31,11 @@ st.markdown("""
         background-color: #231f20;
     }
     
+    /* Remove completamente a barra superior padrão do Streamlit */
+    [data-testid="stHeader"] {
+        display: none !important;
+    }
+
     /* Faz as letras do sistema (Títulos e Textos) brilharem em Verde Neon */
     h1, h2, h3, h4, h5, h6, p, label {
         color: #00E676 !important;
@@ -147,6 +152,30 @@ if not st.session_state.logged_in:
                 st.warning("⚠️ Preencha o seu CPF e a Senha para continuar.")
 
 else:
+    # --- MENU LATERAL (SIDEBAR) ---
+    with st.sidebar:
+        # Tenta carregar o logo; se falhar, exibe a âncora em texto
+        try:
+            if os.path.exists("SIGA-LOGO.png"):
+                st.image("SIGA-LOGO.png", use_container_width=True)
+            else:
+                st.markdown("<h2 style='text-align: center;'>⚓ SIGA</h2>", unsafe_allow_html=True)
+        except Exception:
+            st.markdown("<h2 style='text-align: center;'>⚓ SIGA</h2>", unsafe_allow_html=True)
+        
+        st.divider()
+        
+        # Resumo do Operador na Barra Lateral
+        st.markdown(f"<p style='text-align: center; font-size: 1rem; font-weight: 900;'>👤 {st.session_state.user_full_name}</p>", unsafe_allow_html=True)
+        st.markdown(f"<p style='text-align: center; font-size: 0.8rem; color: #aaaaaa !important;'>{st.session_state.perfil} | {st.session_state.om_nome}</p>", unsafe_allow_html=True)
+        
+        st.divider()
+        
+        # Botão de Logout
+        if st.button("🚪 SAIR DO SISTEMA", use_container_width=True):
+            st.session_state.clear() # Apaga todas as credenciais da memória
+            st.rerun() # Reinicia a página (voltando para a tela de login)
+
     # --- 3. INTERFACE PRINCIPAL DO SISTEMA ---
     st.markdown(f"### 🏥 {st.session_state.om_nome} | Operador: {st.session_state.user_full_name}")
     st.divider()
