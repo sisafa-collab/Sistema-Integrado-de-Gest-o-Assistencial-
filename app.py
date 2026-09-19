@@ -600,9 +600,14 @@ else:
                                 with st.form(key=f"form_docs_{id_dem}"):
                                     st.markdown("#### 📋 PRONTUÁRIO TEMPORÁRIO")
                                     
-                                    col_pront, _ = st.columns([1, 3])
+                                    col_pront, col_hora = st.columns([1, 2])
                                     prontuario = col_pront.text_input("Prontuário nº", key=f"pront_{id_dem}")
                                     
+                                    if horarios_ofertados:
+                                        horario_pref = col_hora.selectbox("Horários disponíveis:", [""] + horarios_ofertados, key=f"hora_{id_dem}")
+                                    else:
+                                        st.warning(f"⚠️ erro na identificação dos horários disponibilizados!")
+
                                     st.markdown("<h5 style='color: #00E676;'>1. IDENTIFICAÇÃO DO PACIENTE</h5>", unsafe_allow_html=True)
                                     c1, c2, c3 = st.columns([2, 1, 1.2])
                                     nome_pac = c1.text_input("Nome Completo", key=f"nome_pac_{id_dem}")
@@ -657,11 +662,6 @@ else:
                                     # Upload do PDF Seguro
                                     pdf_file = st.file_uploader("Anexar Pedido Médico / Guia (PDF)", type=["pdf"])
                                     
-                                    if horarios_ofertados:
-                                        horario_pref = col_hora.selectbox("Horários disponíveis:", [""] + horarios_ofertados, key=f"hora_{id_dem}")
-                                    else:
-                                        st.warning(f"⚠️ erro na identificação dos horários disponibilizados!")
-
 
                                     if st.form_submit_button("📤 ENVIAR DOCUMENTOS (AVANÇAR PARA STATUS 3)", use_container_width=True):
                                         if pdf_file is not None:
