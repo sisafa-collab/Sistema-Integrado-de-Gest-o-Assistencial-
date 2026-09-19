@@ -688,10 +688,8 @@ else:
                             # Puxa as mensagens desta demanda específica
                             res_msg = supabase.table("mensagens_chat").select("*").eq("id_demanda", id_dem).order("timestamp_msg", desc=False).execute()
                             
-                            # 🎨 CONSTRUÇÃO DO CHAT EM HTML (Controle total da Borda Neon e Rolagem)
-                            html_chat = """
-                            <div style='height: 300px; overflow-y: auto; border: 2px solid #00E676; box-shadow: 0 0 15px rgba(0, 230, 118, 0.3); border-radius: 8px; padding: 15px; background-color: #1a1a1a; margin-bottom: 15px;'>
-                            """
+                            # 🎨 CONSTRUÇÃO DO CHAT EM HTML (Sem espaços no início para o Streamlit não bugar)
+                            html_chat = "<div style='height: 300px; overflow-y: auto; border: 2px solid #00E676; box-shadow: 0 0 15px rgba(0, 230, 118, 0.3); border-radius: 8px; padding: 15px; background-color: #1a1a1a; margin-bottom: 15px;'>"
                             
                             if not res_msg.data:
                                 html_chat += "<p style='text-align: center; color: #555555; font-style: italic; margin-top: 100px;'>Nenhuma mensagem enviada ainda...</p>"
@@ -705,15 +703,11 @@ else:
                                     # Puxa o nome do banco
                                     nome_exibicao = msg.get('nome_operador') if msg.get('nome_operador') else 'Operador SIGA'
                                     
-                                    # Monta cada balão de mensagem e adiciona na caixa
-                                    html_chat += f"""
-                                    <div style='text-align: {alinhamento}; margin-bottom: 12px;'>
-                                        <div style='font-size: 10px; color: #aaaaaa; margin-bottom: 3px; font-weight: bold;'>{nome_exibicao}</div>
-                                        <div style='display: inline-block; background-color: {cor_fundo}; color: {cor_texto}; padding: 8px 12px; border-radius: 8px; max-width: 85%; font-size: 13px; text-align: left;'>
-                                            {msg['texto']}
-                                        </div>
-                                    </div>
-                                    """
+                                    # Monta os balões em blocos únicos (impede a quebra do Markdown)
+                                    html_chat += f"<div style='text-align: {alinhamento}; margin-bottom: 12px;'>"
+                                    html_chat += f"<div style='font-size: 10px; color: #aaaaaa; margin-bottom: 3px; font-weight: bold;'>{nome_exibicao}</div>"
+                                    html_chat += f"<div style='display: inline-block; background-color: {cor_fundo}; color: {cor_texto}; padding: 8px 12px; border-radius: 8px; max-width: 85%; font-size: 13px; text-align: left;'>{msg['texto']}</div>"
+                                    html_chat += "</div>"
                             
                             html_chat += "</div>" # Fecha a caixa com borda neon
                             
@@ -723,7 +717,7 @@ else:
                             # Campo de envio de nova mensagem
                             nova_msg = st.text_input("Escreva uma mensagem...", key=f"txt_msg_{id_dem}")
                             
-                            # Botão em maiúsculo para combinar com o layout da imagem
+                            # Botão em maiúsculo para combinar com o layout
                             if st.button("ENVIAR MENSAGEM", key=f"btn_msg_{id_dem}", use_container_width=True):
                                 if nova_msg.strip():
                                     supabase.table("mensagens_chat").insert({
