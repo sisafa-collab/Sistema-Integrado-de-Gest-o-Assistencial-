@@ -652,14 +652,17 @@ else:
 
                                     st.markdown("<h5 style='color: #00E676; margin-top: 15px;'>4. DOCUMENTAÇÃO OBRIGATÓRIA</h5>", unsafe_allow_html=True)
                                     
-                                    
                                     st.markdown("<br>", unsafe_allow_html=True)
-
-                                    st.text_input("Observações Médicas / Horário Preferencial:", key=f"obs_{id_dem}")
                                     
                                     # Upload do PDF Seguro
                                     pdf_file = st.file_uploader("Anexar Pedido Médico / Guia (PDF)", type=["pdf"])
                                     
+                                    if horarios_ofertados:
+                                        horario_pref = col_hora.selectbox("Horários disponíveis:", [""] + horarios_ofertados, key=f"hora_{id_dem}")
+                                    else:
+                                        st.warning(f"⚠️ erro na identificação dos horários disponibilizados!")
+
+
                                     if st.form_submit_button("📤 ENVIAR DOCUMENTOS (AVANÇAR PARA STATUS 3)", use_container_width=True):
                                         if pdf_file is not None:
                                             # Aqui entraria a lógica de salvar o PDF no Storage Temporário
