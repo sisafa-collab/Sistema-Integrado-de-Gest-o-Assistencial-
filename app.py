@@ -688,36 +688,49 @@ else:
                             # Puxa as mensagens desta demanda específica
                             res_msg = supabase.table("mensagens_chat").select("*").eq("id_demanda", id_dem).order("timestamp_msg", desc=False).execute()
                             
-                            # Container rolável para o chat
-                            chat_container = st.container(height=250)
-                            with chat_container:
+                            # 🎨 CONSTRUÇÃO DO CHAT EM HTML (Controle total da Borda Neon e Rolagem)
+                            html_chat = """
+                            <div style='height: 300px; overflow-y: auto; border: 2px solid #00E676; box-shadow: 0 0 15px rgba(0, 230, 118, 0.3); border-radius: 8px; padding: 15px; background-color: #1a1a1a; margin-bottom: 15px;'>
+                            """
+                            
+                            if not res_msg.data:
+                                html_chat += "<p style='text-align: center; color: #555555; font-style: italic; margin-top: 100px;'>Nenhuma mensagem enviada ainda...</p>"
+                            else:
                                 for msg in res_msg.data:
                                     eh_minha = msg['uasg_remetente'] == st.session_state.uasg_logada
                                     alinhamento = "right" if eh_minha else "left"
                                     cor_fundo = "#00E676" if eh_minha else "#4c4955"
                                     cor_texto = "#231f20" if eh_minha else "#ffffff"
                                     
-                                    # Puxa o nome do banco (com fallback caso seja uma mensagem antiga)
+                                    # Puxa o nome do banco
                                     nome_exibicao = msg.get('nome_operador') if msg.get('nome_operador') else 'Operador SIGA'
                                     
-                                    st.markdown(f"""
+                                    # Monta cada balão de mensagem e adiciona na caixa
+                                    html_chat += f"""
                                     <div style='text-align: {alinhamento}; margin-bottom: 12px;'>
                                         <div style='font-size: 10px; color: #aaaaaa; margin-bottom: 3px; font-weight: bold;'>{nome_exibicao}</div>
-                                        <div style='display: inline-block; background-color: {cor_fundo}; color: {cor_texto}; padding: 8px 12px; border-radius: 8px; max-width: 85%; font-size: 13px;'>
+                                        <div style='display: inline-block; background-color: {cor_fundo}; color: {cor_texto}; padding: 8px 12px; border-radius: 8px; max-width: 85%; font-size: 13px; text-align: left;'>
                                             {msg['texto']}
                                         </div>
                                     </div>
-                                    """, unsafe_allow_html=True)
+                                    """
+                            
+                            html_chat += "</div>" # Fecha a caixa com borda neon
+                            
+                            # Renderiza a caixa inteira na tela
+                            st.markdown(html_chat, unsafe_allow_html=True)
                             
                             # Campo de envio de nova mensagem
                             nova_msg = st.text_input("Escreva uma mensagem...", key=f"txt_msg_{id_dem}")
-                            if st.button("Enviar Mensagem", key=f"btn_msg_{id_dem}"):
+                            
+                            # Botão em maiúsculo para combinar com o layout da imagem
+                            if st.button("ENVIAR MENSAGEM", key=f"btn_msg_{id_dem}", use_container_width=True):
                                 if nova_msg.strip():
                                     supabase.table("mensagens_chat").insert({
                                         "id_demanda": id_dem,
                                         "uasg_remetente": st.session_state.uasg_logada,
                                         "texto": nova_msg,
-                                        "nome_operador": st.session_state.user_full_name # 🟢 ENVIANDO O NOME AQUI!
+                                        "nome_operador": st.session_state.user_full_name
                                     }).execute()
                                     st.rerun()
 
