@@ -314,7 +314,7 @@ else:
                         else:
                             st.warning("⚠️ Selecione pelo menos um horário no passo 4 antes de atualizar.")
 
-            # --- PAINEL DE CONSOLIDAÇÃO (Abaixo do formulário) ---
+            # --- PAINEL DE CONSOLIDAÇÃO E EXCLUSÃO ---
             st.divider()
             st.markdown("<h4 style='color: #f8f9fa;'>📋 Minha Grade Cadastrada Atualmente</h4>", unsafe_allow_html=True)
             
@@ -329,6 +329,28 @@ else:
                 df_display.columns = ["Grupo", "Especialidade", "Data", "Horários Reservados"]
                 
                 st.dataframe(df_display, use_container_width=True, hide_index=True)
+                
+                # --- SISTEMA DE CANCELAMENTO DE VAGAS ---
+                st.markdown("<br><h5 style='color: #ff4b4b;'>🗑️ Cancelamento de Agendas</h5>", unsafe_allow_html=True)
+                
+                # Cria a lista de opções mostrando o ID, nome e data para o operador identificar
+                opcoes_exclusao = df_merged.apply(lambda row: f"ID: {row['id_vinculo']} | {row['desc_capacidade']} - {row['dias_disponiveis']}", axis=1).tolist()
+                
+                col_ex1, col_ex2 = st.columns([3, 1])
+                agenda_cancelar = col_ex1.selectbox("Selecione a grade que deseja indisponibilizar:", [""] + opcoes_exclusao)
+                
+                col_ex2.markdown("<br>", unsafe_allow_html=True) # Alinhamento com a caixa de texto
+                if col_ex2.button("🚫 REMOVER GRADE", use_container_width=True):
+                    if agenda_cancelar:
+                        with st.spinner("Excluindo..."):
+                            # Isola apenas o número do ID para mandar pro banco
+                            id_alvo = int(agenda_cancelar.split(" | ")[0].replace("ID: ", ""))
+                            supabase.table("capacidade_hospitalar").delete().eq("id_vinculo", id_alvo).execute()
+                            st.success("✅ Grade de horários indisponibilizada com sucesso!")
+                            time.sleep(1.5)
+                            st.rerun()
+                    else:
+                        st.warning("⚠️ Selecione uma grade na lista antes de clicar em remover.")
             else:
                 st.info("Sua OM ainda não disponibilizou vagas no sistema.")
                 
@@ -492,7 +514,16 @@ else:
         st.write("Acompanhe o status das demandas, troque mensagens em tempo real e anexe a documentação necessária.")
         
         try:
-            # 1. Busca todas as demandas onde a OM logada é ORIGEM (Solicitante) ou DESTINO (Avaliadora)
+            # --- 1. BUSCA GLOBAL DE AGENDAS (Economia de API) ---
+            df_todas_cap = pd.DataFrame(supabase.table("capacidade_hospitalar").select("*").execute().data)
+            df_cat_global = pd.DataFrame(supabase.table("capacidades_disponiveis").select("*").execute().data)
+            
+            if not df_todas_cap.empty and not df_cat_global.empty:
+                df_agendas_sistema = pd.merge(df_todas_cap, df_cat_global, on="id_capacidade")
+            else:
+                df_agendas_sistema = pd.DataFrame()
+
+            # 2. Busca todas as demandas onde a OM logada é ORIGEM (Solicitante) ou DESTINO (Avaliadora)
             res_demandas = supabase.table("demandas").select("*").or_(f"uasg_origem.eq.{st.session_state.uasg_logada},uasg_destino.eq.{st.session_state.uasg_logada}").order("data_criacao", desc=True).execute()
             df_demandas = pd.DataFrame(res_demandas.data)
             
@@ -554,6 +585,18 @@ else:
                             # --- REGRA DE NEGÓCIO: STATUS 2 -> 3 (Envio de Documentos pelo Solicitante) ---
                             elif status_atual == 2 and papel == "SOLICITANTE":
                                 st.success("A demanda foi aprovada! Envie a guia e os dados do paciente para protocolar.")
+
+                               # --- MAPEAMENTO DE HORÁRIOS DA OM DESTINO ---
+                                horarios_ofertados = []
+                                if not df_agendas_sistema.empty:
+                                    filtro_agendas = df_agendas_sistema[(df_agendas_sistema['uasg_hospital'] == outra_om) & (df_agendas_sistema['desc_capacidade'] == row['especialidade'])]
+                                    for _, ag in filtro_agendas.iterrows():
+                                        dia = ag['dias_disponiveis']
+                                        # Quebra os horários (que estão separados por vírgula no banco)
+                                        lista_horas = str(ag['horarios_disponiveis']).split(",")
+                                        for h in lista_horas:
+                                            horarios_ofertados.append(f"{dia} às {h.strip()}")
+
                                 with st.form(key=f"form_docs_{id_dem}"):
                                     st.markdown("#### 📋 PRONTUÁRIO TEMPORÁRIO")
                                     
@@ -608,10 +651,10 @@ else:
                                     resp_trab = c26.text_input("Tel. Trabalho", key=f"rtrab_{id_dem}")
 
                                     st.markdown("<h5 style='color: #00E676; margin-top: 15px;'>4. DOCUMENTAÇÃO OBRIGATÓRIA</h5>", unsafe_allow_html=True)
-                                    pdf_file = st.file_uploader("Anexar Pedido Médico / Guia (PDF)", type=["pdf"], key=f"pdf_{id_dem}")
+                                    
                                     
                                     st.markdown("<br>", unsafe_allow_html=True)
-                                    
+
                                     st.text_input("Observações Médicas / Horário Preferencial:", key=f"obs_{id_dem}")
                                     
                                     # Upload do PDF Seguro
