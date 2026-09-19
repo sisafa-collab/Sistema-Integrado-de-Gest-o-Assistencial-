@@ -488,8 +488,134 @@ else:
 
 
     with tab_acompanhamento:
-        st.subheader("Painel de Tramitação e PDFs")
-        st.write("Acompanhamento das demandas (Status 1 ao 5) e download seguro de guias e prontuários temporários.")
+        st.markdown("<h3 style='color: #00E676; text-shadow: 0 0 10px rgba(0, 230, 118, 0.3);'>🔄 Painel de Tramitação</h3>", unsafe_allow_html=True)
+        st.write("Acompanhe o status das demandas, troque mensagens em tempo real e anexe a documentação necessária.")
+        
+        try:
+            # 1. Busca todas as demandas onde a OM logada é ORIGEM (Solicitante) ou DESTINO (Avaliadora)
+            res_demandas = supabase.table("demandas").select("*").or_(f"uasg_origem.eq.{st.session_state.uasg_logada},uasg_destino.eq.{st.session_state.uasg_logada}").order("data_criacao", desc=True).execute()
+            df_demandas = pd.DataFrame(res_demandas.data)
+            
+            if df_demandas.empty:
+                st.info("Nenhuma demanda registrada para a sua Organização Militar no momento.")
+            else:
+                # Dicionário visual de Status
+                mapa_status = {
+                    1: ("1 - APRESENTADA", "#FF9800"), # Laranja
+                    2: ("2 - APROVADA", "#00E676"),    # Verde Neon
+                    3: ("3 - PROTOCOLADA", "#03A9F4"), # Azul
+                    4: ("4 - AGENDADA", "#9C27B0"),   # Roxo
+                    5: ("5 - FATURADA", "#4CAF50"),    # Verde Escuro
+                    8: ("8 - CANCELADA", "#F44336")    # Vermelho
+                }
+
+                # 2. Laço para criar um "Card/Expander" para cada demanda
+                for _, row in df_demandas.iterrows():
+                    id_dem = row['id_demanda']
+                    status_atual = row['status']
+                    texto_status, cor_status = mapa_status.get(status_atual, ("DESCONHECIDO", "#FFFFFF"))
+                    
+                    # Identifica se a minha OM está pedindo ou recebendo o pedido
+                    papel = "SOLICITANTE" if row['uasg_origem'] == st.session_state.uasg_logada else "OFERTANTE (AVALIADOR)"
+                    outra_om = row['uasg_destino'] if papel == "SOLICITANTE" else row['uasg_origem']
+                    
+                    # Cabeçalho do Card
+                    titulo_card = f"Demanda #{id_dem} | {row['especialidade']} | Status: {texto_status}"
+                    
+                    with st.expander(titulo_card, expanded=(status_atual in [1, 2])):
+                        # Divide a tela: Esquerda (Ações), Direita (Chat)
+                        col_acao, col_chat = st.columns([1.2, 1])
+                        
+                        # ==========================================
+                        # LADO ESQUERDO: INFORMAÇÕES E AÇÕES DE FLUXO
+                        # ==========================================
+                        with col_acao:
+                            st.markdown(f"**Meu Papel:** {papel} | **OM Parceira:** {outra_om}")
+                            st.markdown(f"<span style='color: {cor_status}; font-weight: bold; font-size: 14px;'>STATUS ATUAL: {texto_status}</span>", unsafe_allow_html=True)
+                            st.divider()
+                            
+                            # --- REGRA DE NEGÓCIO: STATUS 1 -> 2 (Aprovação) ---
+                            if status_atual == 1 and papel == "OFERTANTE (AVALIADOR)":
+                                st.info("⚠️ Esta demanda aguarda a sua aprovação para seguir o trâmite.")
+                                c_btn1, c_btn2 = st.columns(2)
+                                if c_btn1.button("✅ APROVAR DEMANDA", key=f"apr_{id_dem}", use_container_width=True):
+                                    with st.spinner("Registrando aprovação..."):
+                                        # Atualiza Status
+                                        supabase.table("demandas").update({"status": 2}).eq("id_demanda", id_dem).execute()
+                                        # Salva Log
+                                        supabase.table("logs_demandas").insert({"id_demanda": id_dem, "status_anterior": 1, "status_novo": 2, "cpf_operador": st.session_state.user_nip}).execute()
+                                        st.rerun()
+                                        
+                                if c_btn2.button("❌ RECUSAR", key=f"rec_{id_dem}", use_container_width=True):
+                                    supabase.table("demandas").update({"status": 8}).eq("id_demanda", id_dem).execute()
+                                    supabase.table("logs_demandas").insert({"id_demanda": id_dem, "status_anterior": 1, "status_novo": 8, "cpf_operador": st.session_state.user_nip}).execute()
+                                    st.rerun()
+
+                            # --- REGRA DE NEGÓCIO: STATUS 2 -> 3 (Envio de Documentos pelo Solicitante) ---
+                            elif status_atual == 2 and papel == "SOLICITANTE":
+                                st.success("A demanda foi aprovada! Envie a guia e os dados do paciente para protocolar.")
+                                with st.form(key=f"form_docs_{id_dem}"):
+                                    st.text_input("Nome do Paciente:", key=f"pac_{id_dem}")
+                                    st.text_input("Observações Médicas / Horário Preferencial:", key=f"obs_{id_dem}")
+                                    
+                                    # Upload do PDF Seguro
+                                    pdf_file = st.file_uploader("Anexar Pedido Médico / Guia (PDF)", type=["pdf"])
+                                    
+                                    if st.form_submit_button("📤 ENVIAR DOCUMENTOS (AVANÇAR PARA STATUS 3)", use_container_width=True):
+                                        if pdf_file is not None:
+                                            # Aqui entraria a lógica de salvar o PDF no Storage Temporário
+                                            # Por enquanto, avançamos o status da máquina de estados
+                                            supabase.table("demandas").update({"status": 3}).eq("id_demanda", id_dem).execute()
+                                            supabase.table("logs_demandas").insert({"id_demanda": id_dem, "status_anterior": 2, "status_novo": 3, "cpf_operador": st.session_state.user_nip}).execute()
+                                            st.success("Documentação enviada com sucesso!")
+                                            time.sleep(1)
+                                            st.rerun()
+                                        else:
+                                            st.error("⚠️ O anexo do PDF é obrigatório para protocolar a demanda.")
+                            
+                            # --- REGRA DE NEGÓCIO: STATUS 3 (Aguardando SAME) ---
+                            elif status_atual == 3:
+                                st.info("📄 Documentação em análise pelo SAME. Acompanhe o chat ao lado para possíveis pendências.")
+
+                        # ==========================================
+                        # LADO DIREITO: CHAT TÁTICO INTEGRADO
+                        # ==========================================
+                        with col_chat:
+                            st.markdown("#### 💬 Chat da Demanda")
+                            
+                            # Puxa as mensagens desta demanda específica
+                            res_msg = supabase.table("mensagens_chat").select("*").eq("id_demanda", id_dem).order("timestamp_msg", desc=False).execute()
+                            
+                            # Container rolável para o chat
+                            chat_container = st.container(height=250)
+                            with chat_container:
+                                for msg in res_msg.data:
+                                    eh_minha = msg['uasg_remetente'] == st.session_state.uasg_logada
+                                    alinhamento = "right" if eh_minha else "left"
+                                    cor_fundo = "#00E676" if eh_minha else "#4c4955"
+                                    cor_texto = "#231f20" if eh_minha else "#ffffff"
+                                    
+                                    st.markdown(f"""
+                                    <div style='text-align: {alinhamento}; margin-bottom: 10px;'>
+                                        <div style='display: inline-block; background-color: {cor_fundo}; color: {cor_texto}; padding: 8px 12px; border-radius: 8px; max-width: 80%; font-size: 13px;'>
+                                            {msg['texto']}
+                                        </div>
+                                    </div>
+                                    """, unsafe_allow_html=True)
+                            
+                            # Campo de envio de nova mensagem
+                            nova_msg = st.text_input("Escreva uma mensagem...", key=f"txt_msg_{id_dem}")
+                            if st.button("Enviar Mensagem", key=f"btn_msg_{id_dem}"):
+                                if nova_msg.strip():
+                                    supabase.table("mensagens_chat").insert({
+                                        "id_demanda": id_dem,
+                                        "uasg_remetente": st.session_state.uasg_logada,
+                                        "texto": nova_msg
+                                    }).execute()
+                                    st.rerun()
+
+        except Exception as e:
+            st.error(f"Erro ao carregar o painel de tramitação: {e}")
 
     with tab_indicadores:
         st.subheader("Painel de Indicadores (Tempo de Resposta)")
