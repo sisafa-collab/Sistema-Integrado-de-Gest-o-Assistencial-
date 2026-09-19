@@ -663,7 +663,7 @@ else:
                                     pdf_file = st.file_uploader("Anexar Pedido Médico / Guia (PDF)", type=["pdf"])
                                     
 
-                                    if st.form_submit_button("📤 ENVIAR DOCUMENTOS (AVANÇAR PARA STATUS 3)", use_container_width=True):
+                                    if st.form_submit_button("📤 ENVIAR DOCUMENTOS PARA ANÁLISE", use_container_width=True):
                                         if pdf_file is not None:
                                             # Aqui entraria a lógica de salvar o PDF no Storage Temporário
                                             # Por enquanto, avançamos o status da máquina de estados
