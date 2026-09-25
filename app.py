@@ -22,76 +22,79 @@ st.set_page_config(layout="wide")
 
 st.markdown("""
 <style>
-    /* Força o fundo escuro e o texto claro na aplicação inteira */
+    /* 1. Força o fundo escuro e o texto claro na aplicação inteira */
     [data-testid="stAppViewContainer"] {
         background-color: #231f20;
         color: #00E676 !important;
     }
     [data-testid="stHeader"] {
-        background-color: #231f20;
+        display: none !important;
     }
-    
     [data-testid="stSidebar"], 
     [data-testid="stSidebar"] > div:first-child {
         background-color: #231f20 !important;
     }
 
-
-    /* Remove completamente a barra superior padrão do Streamlit */
-    [data-testid="stHeader"] {
-        display: none !important;
+    /* 🔎 2. AUMENTO ESCALONADO DE FONTES E ÍCONES (EMOJIS) */
+    p, label, li, span {
+        font-size: 1.15rem !important; /* Textos comuns e ícones base maiores */
     }
+    h1 { font-size: 2.5rem !important; }
+    h2 { font-size: 2.2rem !important; }
+    h3 { font-size: 1.8rem !important; }
+    h4, h5, h6 { font-size: 1.5rem !important; }
 
-    /* Faz as letras do sistema (Títulos e Textos) brilharem em Verde Neon */
-    h1, h2, h3, h4, h5, h6, p, label {
+    /* Faz as letras do sistema brilharem em Verde Neon */
+    h1, h2, h3, h4, h5, h6, p, label, li {
         color: #00E676 !important;
         text-shadow: 0 0 8px rgba(0, 230, 118, 0.4) !important;
     }
 
-    /* Estiliza as abas para combinarem com o fundo escuro */
+    /* 🔎 3. AUMENTO DAS ABAS (TABS) E ÍCONES DELAS */
     .stTabs [data-baseweb="tab-list"] {
         gap: 24px;
     }
     .stTabs [data-baseweb="tab"] {
-        height: 50px;
+        height: 65px; /* Altura expandida para comportar texto maior */
+        font-size: 1.25rem !important; /* Aumenta a letra e o ícone da aba consideravelmente */
         white-space: pre-wrap;
         background-color: #332d2e;
-        border-radius: 4px 4px 0px 0px;
-        gap: 1px;
-        padding-top: 10px;
-        padding-bottom: 10px;
+        border-radius: 6px 6px 0px 0px;
+        padding: 12px 16px;
         color: #ffffff;
     }
     .stTabs [aria-selected="true"] {
         background-color: #4c4955;
-        border-bottom: 2px solid #00E676; /* Detalhe neon na aba ativa */
+        border-bottom: 3px solid #00E676; /* Detalhe mais grosso para chamar atenção */
     }
 
-    /* 🎨 Efeito Neon - Verde Tático Chamativo (#00E676) */
+    /* 🔎 4. AUMENTO DOS BOTÕES E ALARGAMENTO DA ÁREA DE CLIQUE */
     div.stButton > button {
         background-color: transparent !important;
         color: #00E676 !important;
         font-weight: 900 !important;
+        font-size: 1.15rem !important; /* Letras e ícones maiores no botão */
+        padding: 14px 24px !important; /* Área de clique mais amigável */
         border: 2px solid #00E676 !important;
-        border-radius: 6px !important;
+        border-radius: 8px !important;
         text-transform: uppercase;
         letter-spacing: 1.5px;
-        /* Cria o brilho (glow) externo e interno */
         box-shadow: 0 0 10px rgba(0, 230, 118, 0.3), inset 0 0 10px rgba(0, 230, 118, 0.1) !important;
         transition: all 0.3s ease-in-out;
     }
     div.stButton > button:hover {
         background-color: #00E676 !important;
         color: #231f20 !important;
-        /* Intensifica o brilho ao passar o mouse */
         box-shadow: 0 0 20px rgba(0, 230, 118, 0.8), inset 0 0 15px rgba(0, 230, 118, 0.5) !important;
         border: 2px solid #00E676 !important;
     }
     
-    /* Ajuste tático dos campos de digitação (Inputs) */
-    .stTextInput input {
+    /* 🔎 5. AUMENTO DOS CAMPOS DE DIGITAÇÃO E SELEÇÃO */
+    .stTextInput input, .stSelectbox div[data-baseweb="select"] {
         background-color: #332d2e !important;
         color: #00E676 !important;
+        font-size: 1.15rem !important; /* Amplia o texto interno na hora da digitação */
+        padding: 10px !important;
         border: 1px solid #4c4955 !important;
         font-weight: bold;
     }
@@ -418,7 +421,7 @@ else:
                     """
                     
                     if os.path.exists(logo_file):
-                        icone_mapa = folium.CustomIcon(logo_file, icon_size=(45, 45))
+                        icone_mapa = folium.CustomIcon(logo_file, icon_size=(65, 65))
                     else:
                         icone_mapa = folium.Icon(color="green", icon="info-sign")
 
