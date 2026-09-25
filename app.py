@@ -600,14 +600,64 @@ else:
                                     horario_pref = col_hora.selectbox("Horário Preferencial:", [""] + horarios_ofertados, key=f"hora_{id_dem}") if horarios_ofertados else col_hora.text_input("Horário Preferencial:", key=f"hora_{id_dem}")
                                     
                                     st.markdown("<h5 style='color: #00E676;'>1. IDENTIFICAÇÃO DO PACIENTE</h5>", unsafe_allow_html=True)
+                                    
+                                    with st.form(key=f"form_docs_{id_dem}"):
+                                    st.markdown("#### 📋 PRONTUÁRIO TEMPORÁRIO")
+                                    
+                                    col_pront, _ = st.columns([1, 3])
+                                    prontuario = col_pront.text_input("Prontuário nº", key=f"pront_{id_dem}")
+                                    
+                                    st.markdown("<h5 style='color: #00E676;'>1. IDENTIFICAÇÃO DO PACIENTE</h5>", unsafe_allow_html=True)
                                     c1, c2, c3 = st.columns([2, 1, 1.2])
                                     nome_pac = c1.text_input("Nome Completo", key=f"nome_pac_{id_dem}")
                                     dt_nasc = c2.date_input("Data de Nascimento", key=f"dtnasc_{id_dem}")
                                     cpf_pac = c3.text_input("CPF", key=f"cpfpac_{id_dem}")
 
-                                    # (Mantenha os outros campos c4 até c26 exatamente como estavam...)
-                                    nip_pac = st.text_input("NIP do Paciente", key=f"nip_{id_dem}")
-                                    obs_medicas = st.text_area("Observações Médicas:", key=f"obs_{id_dem}")
+                                    c4, c5 = st.columns(2)
+                                    nome_pai = c4.text_input("Nome do pai", key=f"pai_{id_dem}")
+                                    nome_mae = c5.text_input("Nome da mãe", key=f"mae_{id_dem}")
+
+                                    c6, c7, c8, c9 = st.columns([1.5, 1, 1.5, 1])
+                                    rg = c6.text_input("Identidade", key=f"rg_{id_dem}")
+                                    emissor = c7.text_input("Emissor", key=f"emis_{id_dem}")
+                                    nat = c8.text_input("Naturalidade", key=f"nat_{id_dem}")
+                                    sexo = c9.selectbox("Sexo", ["", "Masculino", "Feminino"], key=f"sex_{id_dem}")
+
+                                    c10, c11, c12 = st.columns(3)
+                                    nac = c10.text_input("Nacionalidade", key=f"nac_{id_dem}")
+                                    cor = c11.text_input("Cor", key=f"cor_{id_dem}")
+                                    est_civil = c12.text_input("Estado Civil", key=f"estciv_{id_dem}")
+
+                                    st.markdown("<h5 style='color: #00E676; margin-top: 15px;'>2. CONTATO E ENDEREÇO</h5>", unsafe_allow_html=True)
+                                    c13, c14 = st.columns([3, 1])
+                                    end = c13.text_input("Endereço", key=f"end_{id_dem}")
+                                    bairro = c14.text_input("Bairro", key=f"bai_{id_dem}")
+
+                                    c15, c16, c17 = st.columns([2, 1, 1])
+                                    cidade = c15.text_input("Cidade", key=f"cid_{id_dem}")
+                                    uf = c16.text_input("UF", key=f"uf_{id_dem}")
+                                    cep = c17.text_input("CEP", key=f"cep_{id_dem}")
+
+                                    c18, c19, c20 = st.columns([1, 1.5, 1])
+                                    celular = c18.text_input("Celular", key=f"cel_{id_dem}")
+                                    email = c19.text_input("E-mail", key=f"email_{id_dem}")
+                                    nip_pac = c20.text_input("SARAM / FUSEX / NIP", key=f"nip_pac_{id_dem}")
+
+                                    st.markdown("<h5 style='color: #00E676; margin-top: 15px;'>3. IDENTIFICAÇÃO DO RESPONSÁVEL</h5>", unsafe_allow_html=True)
+                                    c21, c22, c23 = st.columns([2, 1, 1])
+                                    resp_nome = c21.text_input("Nome do Responsável", key=f"resp_{id_dem}")
+                                    resp_posto = c22.text_input("Posto/Graduação", key=f"posto_{id_dem}", placeholder="Ex: Terceiro-Sargento")
+                                    resp_om = c23.text_input("OM", key=f"om_{id_dem}")
+
+                                    c24, c25, c26 = st.columns([2, 1, 1])
+                                    resp_end = c24.text_input("Endereço do Responsável", key=f"rend_{id_dem}")
+                                    resp_cel = c25.text_input("Tel. Celular", key=f"rcel_{id_dem}")
+                                    resp_trab = c26.text_input("Tel. Trabalho", key=f"rtrab_{id_dem}")
+
+                                    st.markdown("<h5 style='color: #00E676; margin-top: 15px;'>4. DOCUMENTAÇÃO OBRIGATÓRIA</h5>", unsafe_allow_html=True)
+                                    pdf_file = st.file_uploader("Anexar Pedido Médico / Guia (PDF)", type=["pdf"], key=f"pdf_{id_dem}")
+                                    
+                                    st.markdown("<br>", unsafe_allow_html=True)
                                     
                                     if st.button("🖨️ GERAR PRONTUÁRIO EM PDF", use_container_width=True):
                                         if nome_pac:
@@ -634,7 +684,7 @@ else:
                                                 pdf_bytes = pdf.output(dest='S').encode('latin-1', 'ignore')
                                                 b64 = base64.b64encode(pdf_bytes).decode()
                                                 nome_arquivo = f"Prontuario_{nip_pac}.pdf"
-                                                
+                                    
                                                 # Botão HTML de Download Seguro (Bypass)
                                                 btn_html = f'''
                                                 <a href="data:application/pdf;base64,{b64}" download="{nome_arquivo}"
