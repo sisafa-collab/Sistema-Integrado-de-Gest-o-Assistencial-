@@ -591,21 +591,21 @@ else:
                                 
                                 # --- MAPEAMENTO DE HORÁRIOS DA OM DESTINO ---
                             
-                            # 1. Puxa os dados reais que o SAME cadastrou no banco de dados (Ajuste para a sua variável real)
-                            horarios_str = registro_demanda.get("coluna_horarios", "") 
-                            
-                            if horarios_str:
-                                # Transforma a string do banco em uma lista de opções
-                                horarios_ofertados = [h.strip() for h in str(horarios_str).split(",")]
-                            else:
-                                # Trava de segurança visual se o SAME esqueceu de cadastrar
-                                horarios_ofertados = ["Nenhum horário liberado pelo SAME"]
-
-                            # 1º PASSO: FORMULÁRIO PARA GERAR O PDF (Não salva no banco)
-                            with st.expander("📝 Preenchimento cadastral", expanded=True):
+                                # 1. Puxa os dados reais que o SAME cadastrou no banco de dados (Ajuste para a sua variável real)
+                                horarios_str = registro_demanda.get("coluna_horarios", "") 
                                 
-                                # Declaração do formulário englobando todos os campos
-                                with st.form(key=f"form_docs_{id_dem}"):
+                                if horarios_str:
+                                    # Transforma a string do banco em uma lista de opções
+                                    horarios_ofertados = [h.strip() for h in str(horarios_str).split(",")]
+                                else:
+                                    # Trava de segurança visual se o SAME esqueceu de cadastrar
+                                    horarios_ofertados = ["Nenhum horário liberado pelo SAME"]
+
+                                # 1º PASSO: FORMULÁRIO PARA GERAR O PDF (Não salva no banco)
+                                with st.expander("📝 Preenchimento cadastral", expanded=True):
+                                    
+                                    # Declaração do formulário englobando todos os campos
+                                    with st.form(key=f"form_docs_{id_dem}"):
                                     
                                     # CORREÇÃO: Menu suspenso isolado e obrigatório. 
                                     # Removemos o text_input para impedir que o solicitante digite um horário inventado.
