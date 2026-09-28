@@ -594,23 +594,16 @@ else:
                                 # (Seu código de mapeamento de horários continua igual aqui...)
                                 
                                 # 1º PASSO: FORMULÁRIO PARA GERAR O PDF (Não salva no banco)
-                                with st.expander("📝 1º PASSO: Gerar Prontuário em PDF", expanded=True):
-                                    col_pront, col_hora = st.columns([1, 2])
-                                    prontuario = col_pront.text_input("Prontuário nº", key=f"pront_{id_dem}")
-                                    horario_pref = col_hora.selectbox("Horário Preferencial:", [""] + horarios_ofertados, key=f"hora_{id_dem}") if horarios_ofertados else col_hora.text_input("Horário Preferencial:", key=f"hora_{id_dem}")
+                                with st.expander("📝 Preenchimento cadastral", expanded=True):
                                     
-                                    # Um passo de cada vez. 
-                                    st.markdown("<h5 style='color: #00E676;'>1. IDENTIFICAÇÃO DO PACIENTE</h5>", unsafe_allow_html=True)
-                                    
-                                    # Declaração do formulário
+                                    # Declaração do formulário englobando todos os campos
                                     with st.form(key=f"form_docs_{id_dem}"):
-                                        # A partir daqui, TUDO ganha um recuo (Tab) para a direita
-                                        st.markdown("#### 📋 PRONTUÁRIO TEMPORÁRIO")
                                         
-                                        col_pront, _ = st.columns([1, 3])
-                                        prontuario = col_pront.text_input("Prontuário nº", key=f"pront_{id_dem}")
+                                        
+                                        horario_pref = selectbox("Horário Preferencial:", [""] + horarios_ofertados, key=f"hora_{id_dem}") if horarios_ofertados else text_input("Horário Preferencial:", key=f"hora_{id_dem}")
                                         
                                         st.markdown("<h5 style='color: #00E676;'>1. IDENTIFICAÇÃO DO PACIENTE</h5>", unsafe_allow_html=True)
+                                        
                                         c1, c2, c3 = st.columns([2, 1, 1.2])
                                         nome_pac = c1.text_input("Nome Completo", key=f"nome_pac_{id_dem}")
                                         dt_nasc = c2.date_input("Data de Nascimento", key=f"dtnasc_{id_dem}")
@@ -662,76 +655,48 @@ else:
                                         
                                         st.markdown("<br>", unsafe_allow_html=True)
                                         
-                                        # Substituição estratégica: De st.button para st.form_submit_button
                                         enviou = st.form_submit_button("🖨️ GERAR PRONTUÁRIO EM PDF", use_container_width=True)
                                         
-                                        # A lógica que executa após clicar no botão continua dentro do 'with st.form'
                                         if enviou:
                                             if nome_pac:
                                                 with st.spinner("Gerando documento protegido..."):
                                                     # GERADOR FPDF
                                                     pdf = FPDF()
                                                     pdf.add_page()
-                                                    # ... o resto do seu código de PDF continua normal aqui para baixo, mantendo esse recuo
-                                                pdf.set_font("Arial", 'B', 14)
-                                                pdf.cell(0, 8, "PRONTUÁRIO MÉDICO TEMPORÁRIO", ln=True, align='C')
-                                                pdf.set_font("Arial", '', 10)
-                                                pdf.cell(0, 6, f"Prontuário: {prontuario} | Horário Preferencial: {horario_pref}", ln=True)
-                                                pdf.ln(5)
-                                                pdf.set_font("Arial", 'B', 11)
-                                                pdf.cell(0, 6, "1. IDENTIFICAÇÃO DO PACIENTE", ln=True)
-                                                pdf.set_font("Arial", '', 10)
-                                                pdf.cell(0, 6, f"Nome: {nome_pac.encode('latin-1', 'ignore').decode('latin-1')}", ln=True)
-                                                pdf.cell(0, 6, f"CPF: {cpf_pac} | NIP: {nip_pac} | Nasc: {dt_nasc.strftime('%d/%m/%Y')}", ln=True)
-                                                pdf.ln(5)
-                                                pdf.set_font("Arial", 'B', 11)
-                                                pdf.cell(0, 6, "2. OBSERVAÇÕES CLÍNICAS", ln=True)
-                                                pdf.set_font("Arial", '', 10)
-                                                pdf.multi_cell(0, 5, obs_medicas.encode('latin-1', 'ignore').decode('latin-1'))
-                                                
-                                                pdf_bytes = pdf.output(dest='S').encode('latin-1', 'ignore')
-                                                b64 = base64.b64encode(pdf_bytes).decode()
-                                                nome_arquivo = f"Prontuario_{nip_pac}.pdf"
-                                    
-                                                # Botão HTML de Download Seguro (Bypass)
-                                                btn_html = f'''
-                                                <a href="data:application/pdf;base64,{b64}" download="{nome_arquivo}"
-                                                   style="display: block; text-align: center; background-color: #00E676;
-                                                          color: #231f20; padding: 10px; border-radius: 5px; font-weight: bold;
-                                                          text-decoration: none; margin-top: 10px; box-shadow: 0 0 10px rgba(0, 230, 118, 0.4);">
-                                                    📥 PRONTUÁRIO PRONTO! CLIQUE AQUI PARA BAIXAR
-                                                </a>
-                                                '''
-                                                st.markdown(btn_html, unsafe_allow_html=True)
-                                        else:
-                                            st.warning("Preencha ao menos o Nome do Paciente para gerar o documento.")
-
-                                # 2º PASSO: UPLOAD SEGURO PARA O BANCO E AVANÇO DE STATUS
-                                with st.container(border=True):
-                                    st.markdown("<h5 style='color: #00E676;'>📤 2º PASSO: Envio de Documentação</h5>", unsafe_allow_html=True)
-                                    st.write("Junte o Prontuário assinado com o Pedido Médico/Guia em um único PDF e envie.")
-                                    
-                                    pdf_upload = st.file_uploader("Anexar Documentação Final (PDF)", type=["pdf"], key=f"up_{id_dem}")
-                                    
-                                    if st.button("🚀 PROTOCOLAR DEMANDA (AVANÇAR PARA STATUS 3)", use_container_width=True):
-                                        if pdf_upload is not None:
-                                            with st.spinner("Enviando documentação de forma segura..."):
-                                                # Faz o upload para o Storage do Supabase
-                                                file_path = f"demanda_{id_dem}_{int(time.time())}.pdf"
-                                                supabase.storage.from_("documentos_siga").upload(file_path, pdf_upload.read())
-                                                
-                                                # Pega o link público do arquivo gerado
-                                                url_publica = supabase.storage.from_("documentos_siga").get_public_url(file_path)
-                                                
-                                                # Atualiza a demanda no banco
-                                                supabase.table("demandas").update({"status": 3, "url_pdf_temporario": url_publica}).eq("id_demanda", id_dem).execute()
-                                                supabase.table("logs_demandas").insert({"id_demanda": id_dem, "status_anterior": 2, "status_novo": 3, "cpf_operador": st.session_state.user_nip}).execute()
-                                                
-                                                st.success("✅ Documentação protocolada com sucesso!")
-                                                time.sleep(1.5)
-                                                st.rerun()
-                                        else:
-                                            st.error("⚠️ O anexo do PDF é obrigatório para protocolar a demanda.")
+                                                    pdf.set_font("Arial", 'B', 14)
+                                                    pdf.cell(0, 8, "PRONTUÁRIO MÉDICO TEMPORÁRIO", ln=True, align='C')
+                                                    pdf.set_font("Arial", '', 10)
+                                                    pdf.cell(0, 6, f"Prontuário: {prontuario} | Horário Preferencial: {horario_pref}", ln=True)
+                                                    pdf.ln(5)
+                                                    pdf.set_font("Arial", 'B', 11)
+                                                    pdf.cell(0, 6, "1. IDENTIFICAÇÃO DO PACIENTE", ln=True)
+                                                    pdf.set_font("Arial", '', 10)
+                                                    pdf.cell(0, 6, f"Nome: {nome_pac.encode('latin-1', 'ignore').decode('latin-1')}", ln=True)
+                                                    pdf.cell(0, 6, f"CPF: {cpf_pac} | NIP: {nip_pac} | Nasc: {dt_nasc.strftime('%d/%m/%Y')}", ln=True)
+                                                    pdf.ln(5)
+                                                    pdf.set_font("Arial", 'B', 11)
+                                                    pdf.cell(0, 6, "2. OBSERVAÇÕES CLÍNICAS", ln=True)
+                                                    pdf.set_font("Arial", '', 10)
+                                                    # Verifica se a variável obs_medicas existe no seu escopo, caso não, crie um campo ou substitua por string vazia
+                                                    obs = obs_medicas if 'obs_medicas' in locals() else "Nenhuma observação informada."
+                                                    pdf.multi_cell(0, 5, obs.encode('latin-1', 'ignore').decode('latin-1'))
+                                                    
+                                                    pdf_bytes = pdf.output(dest='S').encode('latin-1', 'ignore')
+                                                    b64 = base64.b64encode(pdf_bytes).decode()
+                                                    nome_arquivo = f"Prontuario_{nip_pac}.pdf"
+                                        
+                                                    # Botão HTML de Download Seguro (Bypass)
+                                                    btn_html = f'''
+                                                    <a href="data:application/pdf;base64,{b64}" download="{nome_arquivo}"
+                                                       style="display: block; text-align: center; background-color: #00E676;
+                                                              color: #231f20; padding: 10px; border-radius: 5px; font-weight: bold;
+                                                              text-decoration: none; margin-top: 10px; box-shadow: 0 0 10px rgba(0, 230, 118, 0.4);">
+                                                       📥 PRONTUÁRIO PRONTO! CLIQUE AQUI PARA BAIXAR
+                                                    </a>
+                                                    '''
+                                                    st.markdown(btn_html, unsafe_allow_html=True)
+                                            else:
+                                                st.warning("Preencha ao menos o Nome do Paciente para gerar o documento.")
 
                             # --- REGRA DE NEGÓCIO: STATUS 3 EM DIANTE (Análise do SAME) ---
                             elif status_atual >= 3:
