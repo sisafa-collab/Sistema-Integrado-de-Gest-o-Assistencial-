@@ -612,8 +612,8 @@ else:
                                     horario_pref = st.selectbox(
                                         "Dia (s) e horário (s) disponível (eis):", 
                                         [""] + horarios_ofertados, 
-                                        key=f"hora_{id_dem}"
-                                    )                                        
+                                        key=f"hora_{id_dem}")
+                                                                                
                                         st.markdown("<h5 style='color: #00E676;'>1. IDENTIFICAÇÃO DO PACIENTE</h5>", unsafe_allow_html=True)
                                         
                                         c1, c2, c3 = st.columns([2, 1, 1.2])
