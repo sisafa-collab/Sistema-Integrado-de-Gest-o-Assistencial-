@@ -592,10 +592,11 @@ else:
                                 # --- MAPEAMENTO DE HORÁRIOS DA OM DESTINO ---
                             
                                 # 1. Puxa os dados reais que o SAME cadastrou no banco de dados (Ajuste para a sua variável real)
-                                horarios_str = registro_demanda.get("coluna_horarios", "") 
+                                horarios_str = row.get("nome_da_coluna_aqui", "") 
                                 
-                                if horarios_str:
-                                    # Transforma a string do banco em uma lista de opções
+                                # Verifica se há texto válido (evita erros caso o campo venha nulo do banco)
+                                if horarios_str and str(horarios_str).strip() not in ["", "None", "nan"]:
+                                    # Transforma a string do banco em uma lista de opções para o menu
                                     horarios_ofertados = [h.strip() for h in str(horarios_str).split(",")]
                                 else:
                                     # Trava de segurança visual se o SAME esqueceu de cadastrar
@@ -603,15 +604,15 @@ else:
 
                                 # 1º PASSO: FORMULÁRIO PARA GERAR O PDF (Não salva no banco)
                                 with st.expander("📝 Preenchimento cadastral", expanded=True):
+                                    
                                     # Declaração do formulário englobando todos os campos
                                     with st.form(key=f"form_docs_{id_dem}"):
                                     
-                                        # CORREÇÃO: Menu suspenso isolado e obrigatório. 
-                                        # Removemos o text_input para impedir que o solicitante digite um horário inventado.
+                                        # O menu suspenso agora puxa os horários limpos vindos do banco
                                         horario_pref = st.selectbox(
-                                        "Dia (s) e horário (s) disponível (eis):", 
-                                        [""] + horarios_ofertados, 
-                                        key=f"hora_{id_dem}"
+                                            "Dia(s) e horário(s) disponível(eis):", 
+                                            [""] + horarios_ofertados, 
+                                            key=f"hora_{id_dem}"
                                         )
 
                                     st.markdown("<h5 style='color: #00E676;'>1. IDENTIFICAÇÃO DO PACIENTE</h5>", unsafe_allow_html=True)
