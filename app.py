@@ -606,13 +606,13 @@ else:
                                     # Declaração do formulário englobando todos os campos
                                     with st.form(key=f"form_docs_{id_dem}"):
                                     
-                                    # CORREÇÃO: Menu suspenso isolado e obrigatório. 
-                                    # Removemos o text_input para impedir que o solicitante digite um horário inventado.
-                                    horario_pref = st.selectbox(
-                                    "Dia (s) e horário (s) disponível (eis):", 
-                                    [""] + horarios_ofertados, 
-                                    key=f"hora_{id_dem}"
-                                    )
+                                        # CORREÇÃO: Menu suspenso isolado e obrigatório. 
+                                        # Removemos o text_input para impedir que o solicitante digite um horário inventado.
+                                        horario_pref = st.selectbox(
+                                        "Dia (s) e horário (s) disponível (eis):", 
+                                        [""] + horarios_ofertados, 
+                                        key=f"hora_{id_dem}"
+                                        )
 
                                     st.markdown("<h5 style='color: #00E676;'>1. IDENTIFICAÇÃO DO PACIENTE</h5>", unsafe_allow_html=True)
                                     
