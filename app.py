@@ -603,7 +603,6 @@ else:
 
                                 # 1º PASSO: FORMULÁRIO PARA GERAR O PDF (Não salva no banco)
                                 with st.expander("📝 Preenchimento cadastral", expanded=True):
-                                    
                                     # Declaração do formulário englobando todos os campos
                                     with st.form(key=f"form_docs_{id_dem}"):
                                     
@@ -612,7 +611,8 @@ else:
                                     horario_pref = st.selectbox(
                                     "Dia (s) e horário (s) disponível (eis):", 
                                     [""] + horarios_ofertados, 
-                                    key=f"hora_{id_dem}")
+                                    key=f"hora_{id_dem}"
+                                    )
 
                                     st.markdown("<h5 style='color: #00E676;'>1. IDENTIFICAÇÃO DO PACIENTE</h5>", unsafe_allow_html=True)
                                     
