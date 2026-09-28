@@ -590,28 +590,33 @@ else:
                                 st.success("Demanda aprovada! 1º) Preencha os dados e baixe o Prontuário. 2º) Anexe-o escaneado com a guia médica.")
                                 
                                 # --- MAPEAMENTO DE HORÁRIOS DA OM DESTINO ---
-                            
-                                # 1. Puxa os dados reais que o SAME cadastrou no banco de dados (Ajuste para a sua variável real)
-                                horarios_str = row.get("nome_da_coluna_aqui", "") 
+                                uasg_atendimento = row['uasg_destino']
                                 
-                                # Verifica se há texto válido (evita erros caso o campo venha nulo do banco)
-                                if horarios_str and str(horarios_str).strip() not in ["", "None", "nan"]:
-                                    # Transforma a string do banco em uma lista de opções para o menu
-                                    horarios_ofertados = [h.strip() for h in str(horarios_str).split(",")]
-                                else:
-                                    # Trava de segurança visual se o SAME esqueceu de cadastrar
-                                    horarios_ofertados = ["Nenhum horário liberado pelo SAME"]
+                                # Faz a consulta na tabela relacional que o SAME alimenta
+                                res_agenda = supabase.table("capacidade_hospitalar").select("dias_disponiveis, horarios_disponiveis").eq("uasg_hospital", uasg_atendimento).execute()
+                                
+                                opcoes_agenda = []
+                                # Se encontrou capacidades cadastradas para este hospital
+                                if res_agenda.data:
+                                    for agenda in res_agenda.data:
+                                        dias = agenda.get("dias_disponiveis", "").strip()
+                                        horas = agenda.get("horarios_disponiveis", "").strip()
+                                        if dias or horas:
+                                            # Monta a opção visual, ex: "Seg, Qua, Sex - 08:00 às 12:00"
+                                            opcoes_agenda.append(f"{dias} - {horas}")
+                                
+                                # Trava de segurança caso o SAME do hospital não tenha cadastrado nada na tabela ainda
+                                if not opcoes_agenda:
+                                    opcoes_agenda = ["Nenhuma agenda cadastrada pelo SAME"]
 
                                 # 1º PASSO: FORMULÁRIO PARA GERAR O PDF (Não salva no banco)
                                 with st.expander("📝 Preenchimento cadastral", expanded=True):
-                                    
-                                    # Declaração do formulário englobando todos os campos
                                     with st.form(key=f"form_docs_{id_dem}"):
-                                    
-                                        # O menu suspenso agora puxa os horários limpos vindos do banco
+                                        
+                                        # O menu agora exibe as agendas puxadas diretamente da capacidade_hospitalar
                                         horario_pref = st.selectbox(
                                             "Dia(s) e horário(s) disponível(eis):", 
-                                            [""] + horarios_ofertados, 
+                                            [""] + opcoes_agenda, 
                                             key=f"hora_{id_dem}"
                                         )
 
