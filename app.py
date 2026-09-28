@@ -599,8 +599,8 @@ else:
                                     # Declaração do formulário englobando todos os campos
                                     with st.form(key=f"form_docs_{id_dem}"):
                                         
-                                        
-                                        horario_pref = selectbox("Horário Preferencial:", [""] + horarios_ofertados, key=f"hora_{id_dem}") if horarios_ofertados else text_input("Horário Preferencial:", key=f"hora_{id_dem}")
+                                        # CORREÇÃO: Adicionado st.selectbox e st.text_input
+                                        horario_pref = st.selectbox("Horário Preferencial:", [""] + horarios_ofertados, key=f"hora_{id_dem}") if horarios_ofertados else st.text_input("Horário Preferencial:", key=f"hora_{id_dem}")
                                         
                                         st.markdown("<h5 style='color: #00E676;'>1. IDENTIFICAÇÃO DO PACIENTE</h5>", unsafe_allow_html=True)
                                         
