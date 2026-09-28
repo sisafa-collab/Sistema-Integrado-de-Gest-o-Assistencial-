@@ -590,38 +590,20 @@ else:
                                 st.success("Demanda aprovada! 1º) Preencha os dados e baixe o Prontuário. 2º) Anexe-o escaneado com a guia médica.")
                                 
                                 # --- MAPEAMENTO DE HORÁRIOS DA OM DESTINO ---
-                            uasg_atendimento = row['uasg_destino']
-                            
-                            # Faz a consulta na tabela relacional que o SAME alimenta
-                            res_agenda = supabase.table("capacidade_hospitalar").select("dias_disponiveis, horarios_disponiveis").eq("uasg_hospital", uasg_atendimento).execute()
-                            
-                            opcoes_agenda = []
-                            if res_agenda.data:
-                                for agenda in res_agenda.data:
-                                    dias = str(agenda.get("dias_disponiveis", "")).strip()
-                                    horas_brutas = str(agenda.get("horarios_disponiveis", "")).strip()
-                                    
-                                    if dias and horas_brutas:
-                                        # NOVA LÓGICA: Quebra a string de horas pela vírgula e cria uma opção para cada
-                                        for hora in horas_brutas.split(","):
-                                            opcoes_agenda.append(f"{dias} - {hora.strip()}")
-                            
-                            # Trava de segurança
-                            if not opcoes_agenda:
-                                opcoes_agenda = ["Nenhuma agenda cadastrada pelo SAME"]
-
-                            # 1º PASSO: FORMULÁRIO PARA GERAR O PDF (Não salva no banco)
-                            with st.expander("📝 Preenchimento cadastral", expanded=True):
+                                uasg_atendimento = row['uasg_destino']
                                 
-                                # ABERTURA DO FORMULÁRIO (Tudo precisa ficar recuado a partir daqui)
-                                with st.form(key=f"form_docs_{id_dem}"):
-                                    
-                                    # O menu agora exibe as agendas fatiadas corretamente
-                                    horario_pref = st.selectbox(
-                                        "Dia e horário disponível:", 
-                                        [""] + opcoes_agenda, 
-                                        key=f"hora_{id_dem}"
-                                    )
+                                # Faz a consulta na tabela relacional que o SAME alimenta
+                                res_agenda = supabase.table("capacidade_hospitalar").select("dias_disponiveis, horarios_disponiveis").eq("uasg_hospital", uasg_atendimento).execute()
+                                
+                                opcoes_agenda = []
+                                # Se encontrou capacidades cadastradas para este hospital
+                                if res_agenda.data:
+                                    for agenda in res_agenda.data:
+                                        dias = agenda.get("dias_disponiveis", "").strip()
+                                        horas = agenda.get("horarios_disponiveis", "").strip()
+                                        if dias or horas:
+                                            # Monta a opção visual, ex: "Seg, Qua, Sex - 08:00 às 12:00"
+                                            opcoes_agenda.append(f"{dias} - {horas}")
                                 
                                 # Trava de segurança caso o SAME do hospital não tenha cadastrado nada na tabela ainda
                                 if not opcoes_agenda:
