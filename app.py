@@ -638,7 +638,7 @@ else:
                                     # =================================================================
                                     # SELEÇÃO DINÂMICA (Fica FORA do st.form para atualizar em tempo real)
                                     # =================================================================
-                                    st.markdown("<h5 style='color: #00E676;'>📅 1. ESCOLHA DA DATA E HORÁRIO</h5>", unsafe_allow_html=True)
+                                    st.markdown("<h5 style='color: #00E676;'>📅 ESCOLHA DA DATA E HORÁRIO</h5>", unsafe_allow_html=True)
                                     
                                     if dict_agendas:
                                         datas_disponiveis = list(dict_agendas.keys())
@@ -836,7 +836,7 @@ else:
                                                 st.warning("Preencha ao menos o Nome do Paciente e escolha o Horário para gerar o documento.")
 
 
-                                        st.markdown("<h5 style='color: #00E676; margin-top: 15px;'>4. DOCUMENTAÇÃO OBRIGATÓRIA</h5>", unsafe_allow_html=True)
+                                        st.markdown("<h5 style='color: #00E676; margin-top: 15px;'> DOCUMENTAÇÃO OBRIGATÓRIA</h5>", unsafe_allow_html=True)
                                         pdf_file = st.file_uploader("Anexar Pedido Médico / Guia (PDF)", type=["pdf"], key=f"pdf_{id_dem}")
                                         
                                         st.markdown("<br>", unsafe_allow_html=True)
