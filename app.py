@@ -7,6 +7,7 @@ from supabase import create_client, Client
 import time    
 import datetime
 import base64
+from fpdf import FPDF
 
 # --- CONEXÃO COM O BANCO DE DADOS SUPABASE ---
 @st.cache_resource
