@@ -611,35 +611,35 @@ else:
                                                     dict_agendas[d] = []
                                                 dict_agendas[d].extend(lista_horas)
 
-                            # 1º PASSO: ÁREA DE PREENCHIMENTO
-                            with st.expander("📝 Preenchimento cadastral", expanded=True):
-                                
-                                # =================================================================
-                                # SELEÇÃO DINÂMICA (Fica FORA do st.form para atualizar em tempo real)
-                                # =================================================================
-                                st.markdown("<h5 style='color: #00E676;'>📅 1. ESCOLHA DA DATA E HORÁRIO</h5>", unsafe_allow_html=True)
-                                
-                                if dict_agendas:
-                                    datas_disponiveis = list(dict_agendas.keys())
+                                # 1º PASSO: ÁREA DE PREENCHIMENTO
+                                with st.expander("📝 Preenchimento cadastral", expanded=True):
                                     
-                                    # Mostra visualmente as datas liberadas em destaque
-                                    st.markdown(f"🗓️ *Datas liberadas pelo SAME:* **<span style='color: #00E676;'>{', '.join(datas_disponiveis)}</span>**", unsafe_allow_html=True)
+                                    # =================================================================
+                                    # SELEÇÃO DINÂMICA (Fica FORA do st.form para atualizar em tempo real)
+                                    # =================================================================
+                                    st.markdown("<h5 style='color: #00E676;'>📅 1. ESCOLHA DA DATA E HORÁRIO</h5>", unsafe_allow_html=True)
                                     
-                                    col_data, col_hora = st.columns(2)
-                                    # Passo A: Escolhe a data
-                                    data_escolhida = col_data.selectbox("Selecione o Dia:", datas_disponiveis, key=f"sel_data_{id_dem}")
+                                    if dict_agendas:
+                                        datas_disponiveis = list(dict_agendas.keys())
+                                        
+                                        # Mostra visualmente as datas liberadas em destaque
+                                        st.markdown(f"🗓️ *Datas liberadas pelo SAME:* **<span style='color: #00E676;'>{', '.join(datas_disponiveis)}</span>**", unsafe_allow_html=True)
+                                        
+                                        col_data, col_hora = st.columns(2)
+                                        # Passo A: Escolhe a data
+                                        data_escolhida = col_data.selectbox("Selecione o Dia:", datas_disponiveis, key=f"sel_data_{id_dem}")
+                                        
+                                        # Passo B: Puxa apenas os horários da data escolhida acima
+                                        horarios_da_data = dict_agendas.get(data_escolhida, [])
+                                        hora_escolhida = col_hora.selectbox("Selecione o Horário:", [""] + horarios_da_data, key=f"sel_hora_{id_dem}")
+                                        
+                                        # Salva a escolha final para imprimir no PDF
+                                        horario_pref = f"{data_escolhida} - {hora_escolhida}" if hora_escolhida else ""
+                                    else:
+                                        st.warning("Nenhuma agenda cadastrada pelo SAME.")
+                                        horario_pref = ""
                                     
-                                    # Passo B: Puxa apenas os horários da data escolhida acima
-                                    horarios_da_data = dict_agendas.get(data_escolhida, [])
-                                    hora_escolhida = col_hora.selectbox("Selecione o Horário:", [""] + horarios_da_data, key=f"sel_hora_{id_dem}")
-                                    
-                                    # Salva a escolha final para imprimir no PDF
-                                    horario_pref = f"{data_escolhida} - {hora_escolhida}" if hora_escolhida else ""
-                                else:
-                                    st.warning("Nenhuma agenda cadastrada pelo SAME.")
-                                    horario_pref = ""
-                                
-                                st.divider()
+                                    st.divider()
 
                                 # 1º PASSO: FORMULÁRIO PARA GERAR O PDF (Não salva no banco)
                                 with st.expander("📝 Preenchimento cadastral", expanded=True):
