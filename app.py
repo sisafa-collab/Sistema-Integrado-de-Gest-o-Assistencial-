@@ -23,10 +23,9 @@ st.set_page_config(layout="wide")
 
 st.markdown("""
 <style>
-    /* 1. Força o fundo escuro e o texto claro na aplicação inteira */
+    /* 1. Fundo escuro da aplicação */
     [data-testid="stAppViewContainer"] {
         background-color: #231f20;
-        color: #00E676 !important;
     }
     [data-testid="stHeader"] {
         display: none !important;
@@ -36,28 +35,50 @@ st.markdown("""
         background-color: #231f20 !important;
     }
 
-    /* 🔎 2. AUMENTO ESCALONADO DE FONTES E ÍCONES (EMOJIS) */
+    /* 🔎 2. HIERARQUIA DE TEXTO E CORES (A MÁGICA DA LEITURA LIMPA) */
+    
+    /* Textos comuns em cinza claro sólido (Sem neon para não cansar a vista) */
     p, label, li, span {
-        font-size: 1.15rem !important; /* Textos comuns e ícones base maiores */
+        font-size: 1.15rem !important; 
+        color: #E0E0E0 !important; /* Cinza claro elegante */
+        text-shadow: none !important; 
     }
+    
+    /* Apenas os títulos acendem em Verde Neon SISAFA */
+    h1, h2, h3, h4, h5, h6 {
+        color: #00E676 !important;
+        text-shadow: 0 0 8px rgba(0, 230, 118, 0.4) !important;
+        font-weight: bold;
+    }
+    
     h1 { font-size: 2.5rem !important; }
     h2 { font-size: 2.2rem !important; }
     h3 { font-size: 1.8rem !important; }
     h4, h5, h6 { font-size: 1.5rem !important; }
 
-    /* Faz as letras do sistema brilharem em Verde Neon */
-    h1, h2, h3, h4, h5, h6, p, label, li {
-        color: #00E676 !important;
-        text-shadow: 0 0 8px rgba(0, 230, 118, 0.4) !important;
+    /* 🔎 3. LINHAS DIVISÓRIAS NEON (st.divider) */
+    hr {
+        border-top: 1px solid rgba(0, 230, 118, 0.4) !important;
+        box-shadow: 0 0 8px rgba(0, 230, 118, 0.2) !important;
+        margin-top: 25px !important;
+        margin-bottom: 25px !important;
     }
 
-    /* 🔎 3. AUMENTO DAS ABAS (TABS) E ÍCONES DELAS */
+    /* 🔎 4. CAIXAS E EXPANDERS (Organiza o visual "embolado") */
+    [data-testid="stExpander"] {
+        border: 1px solid rgba(0, 230, 118, 0.3) !important;
+        border-radius: 8px !important;
+        background-color: #2a2526 !important; /* Fundo um tom acima do painel para destacar */
+        margin-bottom: 15px;
+    }
+
+    /* 🔎 5. AUMENTO DAS ABAS (TABS) E ÍCONES DELAS */
     .stTabs [data-baseweb="tab-list"] {
         gap: 24px;
     }
     .stTabs [data-baseweb="tab"] {
-        height: 65px; /* Altura expandida para comportar texto maior */
-        font-size: 1.25rem !important; /* Aumenta a letra e o ícone da aba consideravelmente */
+        height: 65px; 
+        font-size: 1.25rem !important; 
         white-space: pre-wrap;
         background-color: #332d2e;
         border-radius: 6px 6px 0px 0px;
@@ -66,16 +87,16 @@ st.markdown("""
     }
     .stTabs [aria-selected="true"] {
         background-color: #4c4955;
-        border-bottom: 3px solid #00E676; /* Detalhe mais grosso para chamar atenção */
+        border-bottom: 3px solid #00E676; 
     }
 
-    /* 🔎 4. AUMENTO DOS BOTÕES E ALARGAMENTO DA ÁREA DE CLIQUE */
+    /* 🔎 6. BOTÕES E ÁREA DE CLIQUE */
     div.stButton > button {
         background-color: transparent !important;
         color: #00E676 !important;
         font-weight: 900 !important;
-        font-size: 1.15rem !important; /* Letras e ícones maiores no botão */
-        padding: 14px 24px !important; /* Área de clique mais amigável */
+        font-size: 1.15rem !important; 
+        padding: 14px 24px !important; 
         border: 2px solid #00E676 !important;
         border-radius: 8px !important;
         text-transform: uppercase;
@@ -87,14 +108,13 @@ st.markdown("""
         background-color: #00E676 !important;
         color: #231f20 !important;
         box-shadow: 0 0 20px rgba(0, 230, 118, 0.8), inset 0 0 15px rgba(0, 230, 118, 0.5) !important;
-        border: 2px solid #00E676 !important;
     }
     
-    /* 🔎 5. AUMENTO DOS CAMPOS DE DIGITAÇÃO E SELEÇÃO */
+    /* 🔎 7. CAMPOS DE DIGITAÇÃO E SELEÇÃO */
     .stTextInput input, .stSelectbox div[data-baseweb="select"] {
         background-color: #332d2e !important;
         color: #00E676 !important;
-        font-size: 1.15rem !important; /* Amplia o texto interno na hora da digitação */
+        font-size: 1.15rem !important; 
         padding: 10px !important;
         border: 1px solid #4c4955 !important;
         font-weight: bold;
@@ -717,7 +737,7 @@ else:
                                                     pdf.set_fill_color(*COR_PRIMARIA)
                                                     pdf.set_text_color(255, 255, 255)
                                                     pdf.set_font("Arial", 'B', 15)
-                                                    pdf.cell(0, 14, "  PRONTUÁRIO MÉDICO TEMPORÁRIO", border=0, ln=True, align='L', fill=True)
+                                                    pdf.cell(0, 14, "  INFORMAÇÕES CADASTRAIS", border=0, ln=True, align='L', fill=True)
                                                     
                                                     # Subtítulo alinhado à direita
                                                     pdf.set_text_color(120, 120, 120)
@@ -759,7 +779,7 @@ else:
                                                     pdf.ln(2)
                                                     
                                                     add_linha("NOME:", nome_pac, "CPF:", cpf_pac, "NASC:", dt_nasc.strftime('%d/%m/%Y'))
-                                                    add_linha("NIP/SARAM:", nip_pac, "RG:", f"{rg} {emissor}", "SEXO:", sexo)
+                                                    add_linha("NIP/SARAM/FUSEX:", nip_pac, "RG:", f"{rg} {emissor}", "SEXO:", sexo)
                                                     add_linha("MÃE:", nome_mae, "PAI:", nome_pai)
                                                     add_linha("EST. CIVIL:", est_civil, "NACIONAL.:", nac, "COR:", cor)
                                                     pdf.ln(4)
@@ -793,7 +813,7 @@ else:
                                                     pdf.ln(4)
                                                     pdf.set_text_color(150, 150, 150)
                                                     pdf.set_font("Arial", 'I', 8)
-                                                    pdf.multi_cell(0, 4, "Documento gerado eletronicamente e protegido pelo Sistema Integrado de Gestão Assistencial (SIGA).\nEste impresso é de uso interno e serve como documento auxiliar de identificação e tramitação.", align='C')
+                                                    pdf.multi_cell(0, 4, "Documento gerado eletronicamente pelo Sistema Integrado de Gestão Assistencial (SIGA).\nEste impresso é de uso interno e serve como documento auxiliar de identificação e tramitação.", align='C')
 
                                                     # ==========================================
                                                     # GERAÇÃO E DOWNLOAD SEGURO
