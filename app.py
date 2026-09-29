@@ -645,13 +645,6 @@ else:
                                 with st.expander("📝 Preenchimento cadastral", expanded=True):
                                     with st.form(key=f"form_docs_{id_dem}"):
                                         
-                                        # O menu agora exibe as agendas puxadas diretamente da capacidade_hospitalar
-                                        horario_pref = st.selectbox(
-                                            "Dia(s) e horário(s) disponível(eis):", 
-                                            [""] + opcoes_agenda, 
-                                            key=f"hora_{id_dem}"
-                                        )
-
                                     st.markdown("<h5 style='color: #00E676;'>1. IDENTIFICAÇÃO DO PACIENTE</h5>", unsafe_allow_html=True)
                                     
                                     c1, c2, c3 = st.columns([2, 1, 1.2])
