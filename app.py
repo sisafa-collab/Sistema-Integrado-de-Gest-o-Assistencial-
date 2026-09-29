@@ -590,26 +590,26 @@ else:
                                 st.success("Demanda aprovada! 1º) Preencha os dados e baixe o Prontuário. 2º) Anexe-o escaneado com a guia médica.")
                                 
                                 # --- MAPEAMENTO DE HORÁRIOS DA OM DESTINO ---
-                            uasg_atendimento = row['uasg_destino']
-                            
-                            # Faz a consulta na tabela relacional que o SAME alimenta
-                            res_agenda = supabase.table("capacidade_hospitalar").select("dias_disponiveis, horarios_disponiveis").eq("uasg_hospital", uasg_atendimento).execute()
-                            
-                            # 1. Agrupa os horários por data em um Dicionário: {'26/10': ['13:00', '13:20'], '27/10': ['08:00']}
-                            dict_agendas = {}
-                            if res_agenda.data:
-                                for agenda in res_agenda.data:
-                                    dias_raw = str(agenda.get("dias_disponiveis", "")).strip()
-                                    horas_raw = str(agenda.get("horarios_disponiveis", "")).strip()
-                                    
-                                    if dias_raw and horas_raw:
-                                        lista_dias = [d.strip() for d in dias_raw.split(",")]
-                                        lista_horas = [h.strip() for h in horas_raw.split(",")]
+                                uasg_atendimento = row['uasg_destino']
+                                
+                                # Faz a consulta na tabela relacional que o SAME alimenta
+                                res_agenda = supabase.table("capacidade_hospitalar").select("dias_disponiveis, horarios_disponiveis").eq("uasg_hospital", uasg_atendimento).execute()
+                                
+                                # 1. Agrupa os horários por data em um Dicionário: {'26/10': ['13:00', '13:20'], '27/10': ['08:00']}
+                                dict_agendas = {}
+                                if res_agenda.data:
+                                    for agenda in res_agenda.data:
+                                        dias_raw = str(agenda.get("dias_disponiveis", "")).strip()
+                                        horas_raw = str(agenda.get("horarios_disponiveis", "")).strip()
                                         
-                                        for d in lista_dias:
-                                            if d not in dict_agendas:
-                                                dict_agendas[d] = []
-                                            dict_agendas[d].extend(lista_horas)
+                                        if dias_raw and horas_raw:
+                                            lista_dias = [d.strip() for d in dias_raw.split(",")]
+                                            lista_horas = [h.strip() for h in horas_raw.split(",")]
+                                            
+                                            for d in lista_dias:
+                                                if d not in dict_agendas:
+                                                    dict_agendas[d] = []
+                                                dict_agendas[d].extend(lista_horas)
 
                             # 1º PASSO: ÁREA DE PREENCHIMENTO
                             with st.expander("📝 Preenchimento cadastral", expanded=True):
