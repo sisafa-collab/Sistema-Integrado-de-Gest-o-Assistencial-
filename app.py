@@ -633,7 +633,7 @@ else:
                                                 dict_agendas[d].extend(lista_horas)
 
                                 # 1º PASSO: ÁREA DE PREENCHIMENTO
-                                with st.expander("📝 Preenchimento cadastral", expanded=True):
+                                with st.expander("📝 Dados de agendamento", expanded=True):
                                     
                                     # =================================================================
                                     # SELEÇÃO DINÂMICA (Fica FORA do st.form para atualizar em tempo real)
