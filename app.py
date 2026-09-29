@@ -693,53 +693,133 @@ else:
                                         resp_cel = c25.text_input("Tel. Celular", key=f"rcel_{id_dem}")
                                         resp_trab = c26.text_input("Tel. Trabalho", key=f"rtrab_{id_dem}")
 
+
+                                        enviou = st.form_submit_button("🖨️ GERAR PRONTUÁRIO EM PDF", use_container_width=True)
+                                        
+                                        if enviou:
+                                        if nome_pac and hora_escolhida:
+                                            with st.spinner("Compilando prontuário tecnológico..."):
+                                                
+                                                # Função auxiliar para limpar acentos para o FPDF (Latin-1)
+                                                def limpa(texto):
+                                                    return str(texto).encode('latin-1', 'ignore').decode('latin-1')
+
+                                                pdf = FPDF()
+                                                pdf.add_page()
+                                                
+                                                # --- PALETA DE CORES SIGA ---
+                                                COR_PRIMARIA = (46, 107, 84)    # Verde Institucional do SIGA
+                                                COR_FUNDO = (240, 245, 242)     # Verde super claro para fundos
+                                                COR_TEXTO = (60, 60, 60)        # Cinza escuro elegante
+                                                
+                                                # --- CABEÇALHO DE ALTO IMPACTO ---
+                                                pdf.set_fill_color(*COR_PRIMARIA)
+                                                pdf.set_text_color(255, 255, 255)
+                                                pdf.set_font("Arial", 'B', 15)
+                                                pdf.cell(0, 14, "  PRONTUÁRIO MÉDICO TEMPORÁRIO", border=0, ln=True, align='L', fill=True)
+                                                
+                                                # Subtítulo alinhado à direita
+                                                pdf.set_text_color(120, 120, 120)
+                                                pdf.set_font("Arial", 'I', 9)
+                                                pdf.cell(0, 6, f"Horário de Agendamento: {limpa(horario_pref)}", border=0, ln=True, align='R')
+                                                pdf.ln(4)
+                                                
+                                                # --- FUNÇÃO TÁTICA PARA ALINHAMENTO EM GRADE ---
+                                                def add_linha(label1, val1, label2="", val2="", label3="", val3=""):
+                                                    pdf.set_font("Arial", 'B', 9)
+                                                    pdf.set_text_color(*COR_PRIMARIA)
+                                                    pdf.cell(24, 6, limpa(label1), border=0)
+                                                    pdf.set_font("Arial", '', 9)
+                                                    pdf.set_text_color(*COR_TEXTO)
+                                                    pdf.cell(66, 6, limpa(val1), border=0)
+                                                    
+                                                    if label2:
+                                                        pdf.set_font("Arial", 'B', 9)
+                                                        pdf.set_text_color(*COR_PRIMARIA)
+                                                        pdf.cell(22, 6, limpa(label2), border=0)
+                                                        pdf.set_font("Arial", '', 9)
+                                                        pdf.set_text_color(*COR_TEXTO)
+                                                        pdf.cell(38, 6, limpa(val2), border=0)
+                                                        
+                                                    if label3:
+                                                        pdf.set_font("Arial", 'B', 9)
+                                                        pdf.set_text_color(*COR_PRIMARIA)
+                                                        pdf.cell(15, 6, limpa(label3), border=0)
+                                                        pdf.set_font("Arial", '', 9)
+                                                        pdf.set_text_color(*COR_TEXTO)
+                                                        pdf.cell(25, 6, limpa(val3), border=0)
+                                                    pdf.ln(6)
+
+                                                # --- SEÇÃO 1: PACIENTE ---
+                                                pdf.set_fill_color(*COR_FUNDO)
+                                                pdf.set_text_color(*COR_PRIMARIA)
+                                                pdf.set_font("Arial", 'B', 10)
+                                                pdf.cell(0, 8, "  1. IDENTIFICAÇÃO DO PACIENTE", border=0, ln=True, align='L', fill=True)
+                                                pdf.ln(2)
+                                                
+                                                add_linha("NOME:", nome_pac, "CPF:", cpf_pac, "NASC:", dt_nasc.strftime('%d/%m/%Y'))
+                                                add_linha("NIP/SARAM:", nip_pac, "RG:", f"{rg} {emissor}", "SEXO:", sexo)
+                                                add_linha("MÃE:", nome_mae, "PAI:", nome_pai)
+                                                add_linha("EST. CIVIL:", est_civil, "NACIONAL.:", nac, "COR:", cor)
+                                                pdf.ln(4)
+
+                                                # --- SEÇÃO 2: CONTATO E ENDEREÇO ---
+                                                pdf.set_fill_color(*COR_FUNDO)
+                                                pdf.set_text_color(*COR_PRIMARIA)
+                                                pdf.set_font("Arial", 'B', 10)
+                                                pdf.cell(0, 8, "  2. CONTATO E ENDEREÇO", border=0, ln=True, align='L', fill=True)
+                                                pdf.ln(2)
+
+                                                add_linha("ENDEREÇO:", f"{end}, {bairro}", "CIDADE:", f"{cidade}/{uf}", "CEP:", cep)
+                                                add_linha("CELULAR:", celular, "E-MAIL:", email)
+                                                pdf.ln(4)
+
+                                                # --- SEÇÃO 3: RESPONSÁVEL ---
+                                                pdf.set_fill_color(*COR_FUNDO)
+                                                pdf.set_text_color(*COR_PRIMARIA)
+                                                pdf.set_font("Arial", 'B', 10)
+                                                pdf.cell(0, 8, "  3. IDENTIFICAÇÃO DO RESPONSÁVEL", border=0, ln=True, align='L', fill=True)
+                                                pdf.ln(2)
+
+                                                add_linha("NOME:", resp_nome, "POSTO/GRAD:", resp_posto, "OM:", resp_om)
+                                                add_linha("CELULAR:", resp_cel, "TRABALHO:", resp_trab)
+                                                pdf.ln(12)
+
+                                                # --- RODAPÉ DE AUTENTICIDADE ---
+                                                pdf.set_draw_color(*COR_PRIMARIA)
+                                                pdf.set_line_width(0.5)
+                                                pdf.line(10, pdf.get_y(), 200, pdf.get_y())
+                                                pdf.ln(4)
+                                                pdf.set_text_color(150, 150, 150)
+                                                pdf.set_font("Arial", 'I', 8)
+                                                pdf.multi_cell(0, 4, "Documento gerado eletronicamente e protegido pelo Sistema Integrado de Gestão Assistencial (SIGA).\nEste impresso é de uso interno e serve como documento auxiliar de identificação e tramitação.", align='C')
+
+                                                # ==========================================
+                                                # GERAÇÃO E DOWNLOAD SEGURO
+                                                # ==========================================
+                                                pdf_bytes = pdf.output(dest='S').encode('latin-1', 'ignore')
+                                                b64 = base64.b64encode(pdf_bytes).decode()
+                                                nome_arquivo = f"Prontuario_{nip_pac if nip_pac else 'Usuario'}.pdf"
+                                    
+                                                btn_html = f'''
+                                                <a href="data:application/pdf;base64,{b64}" download="{nome_arquivo}"
+                                                    style="display: block; text-align: center; background-color: #00E676;
+                                                            color: #1e1e1e; padding: 12px; border-radius: 8px; font-weight: bold;
+                                                            text-decoration: none; margin-top: 15px; font-family: sans-serif;
+                                                            box-shadow: 0 4px 6px rgba(0, 230, 118, 0.2);">
+                                                    📥 PRONTUÁRIO GERADO! CLIQUE AQUI PARA BAIXAR
+                                                </a>
+                                                '''
+                                                st.markdown(btn_html, unsafe_allow_html=True)
+                                        else:
+                                            st.warning("Preencha ao menos o Nome do Paciente e escolha o Horário para gerar o documento.")
+
+
                                         st.markdown("<h5 style='color: #00E676; margin-top: 15px;'>4. DOCUMENTAÇÃO OBRIGATÓRIA</h5>", unsafe_allow_html=True)
                                         pdf_file = st.file_uploader("Anexar Pedido Médico / Guia (PDF)", type=["pdf"], key=f"pdf_{id_dem}")
                                         
                                         st.markdown("<br>", unsafe_allow_html=True)
                                         
-                                        enviou = st.form_submit_button("🖨️ GERAR PRONTUÁRIO EM PDF", use_container_width=True)
-                                        
-                                        if enviou:
-                                            if nome_pac:
-                                                with st.spinner("Gerando documento protegido..."):
-                                                    # GERADOR FPDF
-                                                    pdf = FPDF()
-                                                    pdf.add_page()
-                                                    pdf.set_font("Arial", 'B', 14)
-                                                    pdf.cell(0, 8, "PRONTUÁRIO MÉDICO TEMPORÁRIO", ln=True, align='C')
-                                                    pdf.set_font("Arial", '', 10)
-                                                    pdf.cell(0, 6, f"Prontuário: {prontuario} | Horário Preferencial: {horario_pref}", ln=True)
-                                                    pdf.ln(5)
-                                                    pdf.set_font("Arial", 'B', 11)
-                                                    pdf.cell(0, 6, "1. IDENTIFICAÇÃO DO PACIENTE", ln=True)
-                                                    pdf.set_font("Arial", '', 10)
-                                                    pdf.cell(0, 6, f"Nome: {nome_pac.encode('latin-1', 'ignore').decode('latin-1')}", ln=True)
-                                                    pdf.cell(0, 6, f"CPF: {cpf_pac} | NIP: {nip_pac} | Nasc: {dt_nasc.strftime('%d/%m/%Y')}", ln=True)
-                                                    pdf.ln(5)
-                                                    pdf.set_font("Arial", 'B', 11)
-                                                    pdf.cell(0, 6, "2. OBSERVAÇÕES CLÍNICAS", ln=True)
-                                                    pdf.set_font("Arial", '', 10)
-                                                    # Verifica se a variável obs_medicas existe no seu escopo, caso não, crie um campo ou substitua por string vazia
-                                                    obs = obs_medicas if 'obs_medicas' in locals() else "Nenhuma observação informada."
-                                                    pdf.multi_cell(0, 5, obs.encode('latin-1', 'ignore').decode('latin-1'))
-                                                    
-                                                    pdf_bytes = pdf.output(dest='S').encode('latin-1', 'ignore')
-                                                    b64 = base64.b64encode(pdf_bytes).decode()
-                                                    nome_arquivo = f"Prontuario_{nip_pac}.pdf"
-                                        
-                                                    # Botão HTML de Download Seguro (Bypass)
-                                                    btn_html = f'''
-                                                    <a href="data:application/pdf;base64,{b64}" download="{nome_arquivo}"
-                                                        style="display: block; text-align: center; background-color: #00E676;
-                                                                color: #231f20; padding: 10px; border-radius: 5px; font-weight: bold;
-                                                                text-decoration: none; margin-top: 10px; box-shadow: 0 0 10px rgba(0, 230, 118, 0.4);">
-                                                        📥 PRONTUÁRIO PRONTO! CLIQUE AQUI PARA BAIXAR
-                                                    </a>
-                                                    '''
-                                                    st.markdown(btn_html, unsafe_allow_html=True)
-                                            else:
-                                                st.warning("Preencha ao menos o Nome do Paciente para gerar o documento.")
 
                             # --- REGRA DE NEGÓCIO: STATUS 3 EM DIANTE (Análise do SAME) ---
                             elif status_atual >= 3:
