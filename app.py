@@ -8,6 +8,8 @@ import time
 import datetime
 import base64
 from fpdf import FPDF
+import plotly.graph_objects as go
+import plotly.express as px
 
 # --- CONEXÃO COM O BANCO DE DADOS SUPABASE ---
 @st.cache_resource
