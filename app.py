@@ -743,7 +743,8 @@ else:
                                                     pdf.set_text_color(255, 255, 255)
                                                     pdf.set_font("Arial", 'B', 15)
                                                     pdf.cell(0, 14, "  INFORMAÇÕES CADASTRAIS", border=0, ln=True, align='L', fill=True)
-                                                    
+                                                    pdf.cell(0, 14, "  ⚠️ CONFIRA TODAS AS INFORMAÇÕES ANTES DE ANEXAR ESTE ARQUIVO NO SIGA ⚠️", border=0, ln=True, align='L', fill=True)
+
                                                     # Subtítulo alinhado à direita
                                                     pdf.set_text_color(120, 120, 120)
                                                     pdf.set_font("Arial", 'I', 9)
@@ -1067,7 +1068,7 @@ else:
                     <div class="neon-card card-cyan">
                         <div class="nc-title">Aguardando Ação</div>
                         <div class="nc-value">{na_fila}</div>
-                        <div class="nc-sub">Processos nos Status 3 e 4</div>
+                        <div class="nc-sub">Demandas pendentes (aguardando inserção de documentos ou em análise) </div>
                     </div>
                     """, unsafe_allow_html=True)
                     
@@ -1075,7 +1076,7 @@ else:
                     <div class="neon-card card-green">
                         <div class="nc-title">Taxa de Conclusão</div>
                         <div class="nc-value">{taxa_conclusao:.1f}%</div>
-                        <div class="nc-sub">Pacientes Atendidos (Status 7)</div>
+                        <div class="nc-sub">Pacientes Atendidos </div>
                     </div>
                     """, unsafe_allow_html=True)
                     
@@ -1083,7 +1084,7 @@ else:
                     <div class="neon-card card-alert">
                         <div class="nc-title">Absenteísmo</div>
                         <div class="nc-value">{taxa_absenteismo:.1f}%</div>
-                        <div class="nc-sub">Faltas Injustificadas (Status 6)</div>
+                        <div class="nc-sub"> Consultas canceladas por falta (com ou sem justificativa)</div>
                     </div>
                     """, unsafe_allow_html=True)
                     
@@ -1091,7 +1092,7 @@ else:
                     <div class="neon-card card-orange">
                         <div class="nc-title">Índice de Retrabalho</div>
                         <div class="nc-value">{devolucoes}</div>
-                        <div class="nc-sub">Devoluções (Status 4 p/ 3)</div>
+                        <div class="nc-sub">Devoluções (durante análise documental)</div>
                     </div>
                     """, unsafe_allow_html=True)
 
