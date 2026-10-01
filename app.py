@@ -1156,7 +1156,70 @@ else:
                         st.plotly_chart(fig_pie, use_container_width=True)
 
                     st.divider()
+                    # =================================================================
+                    # 5. RADAR NACIONAL DE DISPONIBILIDADES (TEMPO REAL)
+                    # =================================================================
+                    st.markdown("<h4 style='color: #00E676;'>🗺️ Radar de Especialidades </h4>", unsafe_allow_html=True)
+                    
+                    # 1. Puxa Hospitais + Coordenadas
+                    res_hosp = supabase.table("hospitais").select("uasg, nome, latitude, longitude").execute()
+                    df_h = pd.DataFrame(res_hosp.data)
+                    
+                    # 2. Puxa as agendas ativas (O Gatilho de Cancelamento: se não está aqui, não aparece no mapa)
+                    res_cap = supabase.table("capacidade_hospitalar").select("uasg_hospital, id_capacidade").execute()
+                    df_c = pd.DataFrame(res_cap.data)
+                    
+                    # 3. Puxa os nomes das especialidades
+                    res_desc = supabase.table("capacidades_disponiveis").select("id_capacidade, desc_capacidade").execute()
+                    df_d = pd.DataFrame(res_desc.data)
+                    
+                    if not df_h.empty and not df_c.empty and not df_d.empty:
+                        # Cruza as tabelas para descobrir "Quem oferece o Quê e Onde"
+                        df_mapa_merge = pd.merge(df_c, df_d, on="id_capacidade")
+                        df_mapa_merge = pd.merge(df_mapa_merge, df_h, left_on="uasg_hospital", right_on="uasg")
+                        
+                        # Mantém apenas hospitais com coordenadas cadastradas
+                        df_mapa_merge = df_mapa_merge.dropna(subset=['latitude', 'longitude'])
+                        
+                        if not df_mapa_merge.empty:
+                            # Agrupa as especialidades em uma única linha por hospital para o "Hover" do mouse
+                            df_radar = df_mapa_merge.groupby(['nome', 'latitude', 'longitude']).agg(
+                                Especialidades=('desc_capacidade', lambda x: ', '.join(set(x))),
+                                Capacidades_Ativas=('desc_capacidade', 'count')
+                            ).reset_index()
+                            
+                            # Desenha o Radar Tático com fundo escuro
+                            fig_map = px.scatter_mapbox(
+                                df_radar,
+                                lat="latitude",
+                                lon="longitude",
+                                hover_name="nome",
+                                hover_data={
+                                    "latitude": False, 
+                                    "longitude": False, 
+                                    "Capacidades_Ativas": True, 
+                                    "Especialidades": True
+                                },
+                                size="Capacidades_Ativas",
+                                color_discrete_sequence=["#00E676"], # Ponto de luz Verde Neon
+                                zoom=3.5,
+                                center={"lat": -15.7801, "lon": -47.9292}, # Foco central no Brasil (Brasília)
+                                mapbox_style="carto-darkmatter" # Estilo de mapa tático sem necessidade de API Key
+                            )
+                            
+                            fig_map.update_layout(
+                                margin=dict(l=0, r=0, t=10, b=10),
+                                paper_bgcolor='rgba(0,0,0,0)',
+                                font=dict(color='#E0E0E0')
+                            )
+                            
+                            st.plotly_chart(fig_map, use_container_width=True)
+                        else:
+                            st.warning("⚠️ Os hospitais que possuem agenda não têm as coordenadas (Latitude/Longitude) preenchidas no banco.")
+                    else:
+                        st.info("📡 Nenhuma agenda médica disponível na rede no momento.")
 
+                    st.divider()
                     # =================================================================
                     # 5. MAPA DE CALOR (CHAT TÁTICO)
                     # =================================================================
