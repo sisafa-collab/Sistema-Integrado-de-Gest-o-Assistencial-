@@ -987,14 +987,212 @@ else:
 
         except Exception as e:
             st.error(f"Erro ao carregar o painel de tramitação: {e}")
-
-
             
 
     with tab_indicadores:
-        st.subheader("Painel de Indicadores (Tempo de Resposta)")
-        st.write("Gráficos baseados na tabela de Logs de movimentação.")
+        st.header("📈 Controle Estratégico e Indicadores")
+        st.write("Monitoramento em tempo real do fluxo de demandas, gargalos operacionais e estatísticas de desfecho.")
+
+        # =================================================================
+        # 1. INJEÇÃO DO CSS NEON (Identidade Visual)
+        # =================================================================
+        st.markdown("""
+        <style>
+        .neon-card { background: #2a2526; border-radius: 12px; padding: 20px; margin-bottom: 20px; text-align: center; border: 1px solid rgba(0, 230, 118, 0.3); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); transition: transform 0.2s; border-bottom: 4px solid #eee; }
+        .neon-card:hover { transform: translateY(-3px); }
+        .nc-title { font-size: 0.85rem; font-weight: 700; color: #E0E0E0; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+        .nc-value { font-size: 2.2rem; font-weight: 900; margin-bottom: 5px; color: #ffffff; }
+        .nc-sub { font-size: 0.85rem; font-weight: 600; color: #aaaaaa; }
+        .card-cyan { border-bottom-color: #00e5ff; box-shadow: 0 10px 20px rgba(0, 229, 255, 0.15); }
+        .card-purple { border-bottom-color: #d500f9; box-shadow: 0 10px 20px rgba(213, 0, 249, 0.15); }
+        .card-alert { border-bottom-color: #ff1744; box-shadow: 0 10px 20px rgba(255, 23, 68, 0.15); }
+        .card-green { border-bottom-color: #00e676; box-shadow: 0 10px 20px rgba(0, 230, 118, 0.15); }
+        .card-orange { border-bottom-color: #ff9100; box-shadow: 0 10px 20px rgba(255, 145, 0, 0.15); }
+        </style>
+        """, unsafe_allow_html=True)
+
+        with st.spinner("Sincronizando telemetria com o banco de dados..."):
+            try:
+                # =================================================================
+                # 2. EXTRAÇÃO E PREPARAÇÃO DOS DADOS REAIS DO SUPABASE
+                # =================================================================
+                uasg_atual = st.session_state.uasg_logada
+                
+                # Busca apenas Demandas onde o usuário logado é Origem ou Destino
+                res_dem = supabase.table("demandas").select("*").or_(f"uasg_origem.eq.{uasg_atual},uasg_destino.eq.{uasg_atual}").execute()
+                df_demandas = pd.DataFrame(res_dem.data)
+                
+                if not df_demandas.empty:
+                    # Isola os IDs das demandas para filtrar as tabelas secundárias com precisão
+                    lista_ids_demandas = df_demandas['id_demanda'].tolist()
+                    
+                    # Busca os logs e mensagens e filtra localmente pela lista de IDs autorizados
+                    res_logs = supabase.table("logs_demandas").select("*").execute()
+                    df_logs = pd.DataFrame(res_logs.data)
+                    if not df_logs.empty:
+                        df_logs = df_logs[df_logs['id_demanda'].isin(lista_ids_demandas)]
+                        
+                    res_chat = supabase.table("mensagens_chat").select("*").execute()
+                    df_chat = pd.DataFrame(res_chat.data)
+                    if not df_chat.empty:
+                        df_chat = df_chat[df_chat['id_demanda'].isin(lista_ids_demandas)]
+                    
+                    # --- CÁLCULO DOS KPIS TÁTICOS ---
+                    total_demandas = len(df_demandas)
+                    
+                    # Desfechos consolidados
+                    demandas_resolvidas = df_demandas[df_demandas['status'].isin([6, 7, 8])]
+                    total_resolvidas = len(demandas_resolvidas)
+                    
+                    if total_resolvidas > 0:
+                        taxa_conclusao = (len(demandas_resolvidas[demandas_resolvidas['status'] == 7]) / total_resolvidas) * 100
+                        taxa_absenteismo = (len(demandas_resolvidas[demandas_resolvidas['status'] == 6]) / total_resolvidas) * 100
+                    else:
+                        taxa_conclusao = taxa_absenteismo = 0
+
+                    # Retrabalho: Quantas vezes o Ofertante devolveu para o Solicitante
+                    devolucoes = len(df_logs[(df_logs['status_anterior'] == 4) & (df_logs['status_novo'] == 3)]) if not df_logs.empty else 0
+                    
+                    # Gargalo Operacional: Demandas paradas entre Protocolo e Análise
+                    na_fila = len(df_demandas[df_demandas['status'].isin([3, 4])])
+
+                    # =================================================================
+                    # 3. RENDERIZAÇÃO DOS CARDS NEON
+                    # =================================================================
+                    c1, c2, c3, c4 = st.columns(4)
+                    
+                    c1.markdown(f"""
+                    <div class="neon-card card-cyan">
+                        <div class="nc-title">Aguardando Ação</div>
+                        <div class="nc-value">{na_fila}</div>
+                        <div class="nc-sub">Processos nos Status 3 e 4</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    c2.markdown(f"""
+                    <div class="neon-card card-green">
+                        <div class="nc-title">Taxa de Conclusão</div>
+                        <div class="nc-value">{taxa_conclusao:.1f}%</div>
+                        <div class="nc-sub">Pacientes Atendidos (Status 7)</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    c3.markdown(f"""
+                    <div class="neon-card card-alert">
+                        <div class="nc-title">Absenteísmo</div>
+                        <div class="nc-value">{taxa_absenteismo:.1f}%</div>
+                        <div class="nc-sub">Faltas Injustificadas (Status 6)</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    c4.markdown(f"""
+                    <div class="neon-card card-orange">
+                        <div class="nc-title">Índice de Retrabalho</div>
+                        <div class="nc-value">{devolucoes}</div>
+                        <div class="nc-sub">Devoluções (Status 4 p/ 3)</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                    st.divider()
+
+                    # =================================================================
+                    # 4. GRÁFICOS AVANÇADOS (PLOTLY)
+                    # =================================================================
+                    col_g1, col_g2 = st.columns([2, 1])
+
+                    with col_g1:
+                        st.markdown("<h4 style='color: #00E676;'>🩸 Diagrama de Fluxo Sistêmico </h4>", unsafe_allow_html=True)
+                        st.caption("Acompanhe o trajeto dos pacientes até a conclusão ou evasão (absenteísmo).")
+                        
+                        if not df_logs.empty:
+                            transicoes = df_logs.groupby(['status_anterior', 'status_novo']).size().reset_index(name='valor')
+                            
+                            rotulos = {
+                                1: "1-Apresentada", 2: "2-Aprovada", 3: "3-Protocolada", 
+                                4: "4-Em Análise", 5: "5-Agendada", 6: "6-Absenteísmo", 
+                                7: "7-Concluída", 8: "8-Cancelada"
+                            }
+                            
+                            labels_lista = [rotulos[i] for i in range(1, 9)]
+                            
+                            source = transicoes['status_anterior'].apply(lambda x: int(x) - 1).tolist()
+                            target = transicoes['status_novo'].apply(lambda x: int(x) - 1).tolist()
+                            value = transicoes['valor'].tolist()
+
+                            fig_sankey = go.Figure(data=[go.Sankey(
+                                node = dict(
+                                  pad = 15, thickness = 20,
+                                  line = dict(color = "black", width = 0.5),
+                                  label = labels_lista,
+                                  color = ["#FF9800", "#00E676", "#03A9F4", "#9C27B0", "#E91E63", "#FF5722", "#2196F3", "#F44336"]
+                                ),
+                                link = dict(source = source, target = target, value = value)
+                            )])
+                            
+                            fig_sankey.update_layout(
+                                height=400, margin=dict(l=0, r=0, t=10, b=10),
+                                paper_bgcolor='rgba(0,0,0,0)', font=dict(color='#E0E0E0')
+                            )
+                            st.plotly_chart(fig_sankey, use_container_width=True)
+                        else:
+                            st.info("Aguardando movimentações de status para desenhar o fluxo.")
+
+                    with col_g2:
+                        st.markdown("<h4 style='color: #00E676;'>🎯 Por Especialidade</h4>", unsafe_allow_html=True)
+                        st.caption("Distribuição da carga clínica do seu hospital.")
+                        
+                        especialidades_count = df_demandas['especialidade'].value_counts().reset_index()
+                        especialidades_count.columns = ['Especialidade', 'Quantidade']
+                        
+                        fig_pie = px.pie(especialidades_count, values='Quantidade', names='Especialidade', hole=0.5, 
+                                         color_discrete_sequence=px.colors.qualitative.Pastel)
+                        fig_pie.update_layout(
+                            showlegend=False, margin=dict(l=0, r=0, t=10, b=10),
+                            paper_bgcolor='rgba(0,0,0,0)', font=dict(color='#E0E0E0')
+                        )
+                        fig_pie.update_traces(textposition='inside', textinfo='percent+label')
+                        st.plotly_chart(fig_pie, use_container_width=True)
+
+                    st.divider()
+
+                    # =================================================================
+                    # 5. MAPA DE CALOR (CHAT TÁTICO)
+                    # =================================================================
+                    st.markdown("<h4 style='color: #00E676;'>🔥 Análise de Comunicação (Chat)</h4>", unsafe_allow_html=True)
+                    st.caption("Dias e horários a sua equipe mais troca mensagens nos processos.")
+                    
+                    if not df_chat.empty:
+                        df_chat['timestamp_msg'] = pd.to_datetime(df_chat['timestamp_msg'])
+                        df_chat['Dia_da_Semana'] = df_chat['timestamp_msg'].dt.day_name()
+                        df_chat['Hora'] = df_chat['timestamp_msg'].dt.hour
+                        
+                        mapa_dias = {'Monday': 'Segunda', 'Tuesday': 'Terça', 'Wednesday': 'Quarta', 
+                                     'Thursday': 'Quinta', 'Friday': 'Sexta', 'Saturday': 'Sábado', 'Sunday': 'Domingo'}
+                        df_chat['Dia_da_Semana'] = df_chat['Dia_da_Semana'].map(mapa_dias)
+                        
+                        heatmap_data = df_chat.groupby(['Dia_da_Semana', 'Hora']).size().reset_index(name='Mensagens')
+                        ordem_dias = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo']
+                        
+                        fig_heat = px.density_heatmap(
+                            heatmap_data, x="Hora", y="Dia_da_Semana", z="Mensagens",
+                            category_orders={"Dia_da_Semana": ordem_dias},
+                            color_continuous_scale="algae"  # Escala esverdeada para combinar com o layout
+                        )
+                        fig_heat.update_layout(
+                            xaxis_title="Hora do Dia (0-23)", yaxis_title="",
+                            paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+                            font=dict(color='#E0E0E0')
+                        )
+                        st.plotly_chart(fig_heat, use_container_width=True)
+                    else:
+                        st.info("O chat integrado ainda não possui registros suficientes para gerar o mapa de calor.")
+                        
+                else:
+                    st.warning("Não há demandas registradas para gerar os indicadores. Realize agendamentos para povoar o painel.")
+
+            except Exception as e:
+                st.error(f"Erro ao processar telemetria: {e}")
 
     with tab_contato:
         st.subheader("Suporte e Gestão do Sistema")
-        st.write("Chat integrado e contato direto com os desenvolvedores do SIGA.")
+        st.write("Chat integrado e contato direto com os suporte do SIGA, com militares e/ou servidores civis do Ministério da Defesa (MD).")
