@@ -554,13 +554,15 @@ else:
             if df_demandas.empty:
                 st.info("Nenhuma demanda registrada para a sua Organização Militar no momento.")
             else:
-                # Dicionário visual de Status
+                # Dicionário visual de Status atualizado
                 mapa_status = {
                     1: ("1 - APRESENTADA", "#FF9800"), # Laranja
                     2: ("2 - APROVADA", "#00E676"),    # Verde Neon
                     3: ("3 - PROTOCOLADA", "#03A9F4"), # Azul
-                    4: ("4 - AGENDADA", "#9C27B0"),   # Roxo
-                    5: ("5 - FATURADA", "#4CAF50"),    # Verde Escuro
+                    4: ("4 - EM ANÁLISE", "#9C27B0"),  # Roxo
+                    5: ("5 - AGENDADA", "#E91E63"),    # Rosa Neon
+                    6: ("6 - ABSENTEÍSMO", "#FF5722"), # Laranja Queimado
+                    7: ("7 - CONCLUÍDA", "#2196F3"),   # Azul Vibrante
                     8: ("8 - CANCELADA", "#F44336")    # Vermelho
                 }
 
@@ -667,7 +669,8 @@ else:
                                     with st.form(key=f"form_docs_{id_dem}"):
                                         
                                         st.markdown("<h5 style='color: #00E676;'>1. IDENTIFICAÇÃO DO PACIENTE</h5>", unsafe_allow_html=True)
-                                        
+                                        st.markdown("<h5 style='color: #00E676;'> ⚠️ CONFIRA TODAS AS INFORMAÇÕES ANTES DE ANEXAR ESTE ARQUIVO NO SIGA ⚠️</h5>", unsafe_allow_html=True)
+
                                         c1, c2, c3 = st.columns([2, 1, 1.2])
                                         nome_pac = c1.text_input("Nome Completo", key=f"nome_pac_{id_dem}")
                                         dt_nasc = c2.date_input("Data de Nascimento", key=f"dtnasc_{id_dem}")
@@ -837,48 +840,104 @@ else:
 
 
                                         st.markdown("<h5 style='color: #00E676; margin-top: 15px;'> DOCUMENTAÇÃO OBRIGATÓRIA</h5>", unsafe_allow_html=True)
-                                        pdf_file = st.file_uploader("Anexar Pedido Médico / Guia (PDF)", type=["pdf"], key=f"pdf_{id_dem}")
+                                        pdf_file = st.file_uploader("Anexar (1) Pedido Médico, (2) Formulário de informações cadastrais preenchido, e (3) a Guia (PDF)", type=["pdf"], key=f"pdf_{id_dem}")
                                         
                                         st.markdown("<br>", unsafe_allow_html=True)
                                         
 
-                            # --- REGRA DE NEGÓCIO: STATUS 3 EM DIANTE (Análise do SAME) ---
+                            # --- REGRA DE NEGÓCIO: STATUS 3 EM DIANTE (Fluxo SAME e Desfecho) ---
                             elif status_atual >= 3:
-                                if status_atual == 3:
-                                    st.info("📄 Documentação protocolada. Aguardando análise do SAME.")
-                                
-                                # Botão visual para baixar o PDF anexado
                                 url_pdf = row.get('url_pdf_temporario')
-                                if url_pdf:
-                                    st.markdown(f'''
-                                    <a href="{url_pdf}" target="_blank"
-                                       style="display: block; text-align: center; border: 2px solid #00E676;
-                                              color: #00E676; padding: 10px; border-radius: 5px; font-weight: bold;
-                                              text-decoration: none; margin-bottom: 15px; background-color: #1a1a1a;">
-                                        📥 VISUALIZAR DOCUMENTAÇÃO ANEXADA (PDF)
-                                    </a>
-                                    ''', unsafe_allow_html=True)
-                                
-                                # Ações exclusivas para a OM Ofertante (SAME) durante o Status 3
-                                if status_atual == 3 and papel == "OFERTANTE (AVALIADOR)":
-                                    st.divider()
-                                    st.markdown("#### ⚙️ Decisão do SAME")
-                                    c_btn1, c_btn2 = st.columns(2)
+                                # =====================================
+                                # STATUS 3: PROTOCOLADA (Aguardando ou Devolvida)
+                                # =====================================
+                                if status_atual == 3:
+                                    if papel == "SOLICITANTE":
+                                        st.warning("⚠️ Esta demanda requer que você protocole ou corrija a documentação.")
+                                        
+                                        # Simulação do botão de envio que o Solicitante usa após subir os PDFs
+                                        if st.button("📤 ENVIAR PARA ANÁLISE", key=f"env_analise_{id_dem}", use_container_width=True):
+                                            with st.spinner("Enviando documentação para o SAME ofertante..."):
+                                                supabase.table("demandas").update({"status": 4}).eq("id_demanda", id_dem).execute()
+                                                supabase.table("logs_demandas").insert({"id_demanda": id_dem, "status_anterior": 3, "status_novo": 4, "cpf_operador": st.session_state.user_nip}).execute()
+                                                st.rerun()
+                                    else:
+                                        st.info("⏳ Aguardando o Hospital Solicitante enviar ou corrigir os documentos anexos.")
+
+                                # =====================================
+                                # STATUS 4: EM ANÁLISE (Apreciação do Ofertante)
+                                # =====================================
+                                elif status_atual == 4:
+                                    st.info("📄 Documentação protocolada. Em fase de análise pelo SAME ofertante.")
                                     
-                                    if c_btn1.button("✅ CONFIRMAR AGENDAMENTO", key=f"agendar_{id_dem}", use_container_width=True):
-                                        with st.spinner("Confirmando agendamento..."):
-                                            supabase.table("demandas").update({"status": 4}).eq("id_demanda", id_dem).execute()
-                                            supabase.table("logs_demandas").insert({"id_demanda": id_dem, "status_anterior": 3, "status_novo": 4, "cpf_operador": st.session_state.user_nip}).execute()
-                                            st.rerun()
-                                            
-                                    if c_btn2.button("❌ CANCELAR / DEVOLVER", key=f"canc_same_{id_dem}", use_container_width=True):
-                                        with st.spinner("Cancelando demanda..."):
-                                            supabase.table("demandas").update({"status": 8}).eq("id_demanda", id_dem).execute()
-                                            supabase.table("logs_demandas").insert({"id_demanda": id_dem, "status_anterior": 3, "status_novo": 8, "cpf_operador": st.session_state.user_nip}).execute()
-                                            st.rerun()
+                                    # CUSTÓDIA DA INFORMAÇÃO: Apenas o Ofertante vê o link de download neste status
+                                    if url_pdf and papel == "OFERTANTE (AVALIADOR)":
+                                        st.markdown(f'''
+                                        <a href="{url_pdf}" target="_blank"
+                                           style="display: block; text-align: center; border: 2px solid #9C27B0;
+                                                  color: #9C27B0; padding: 10px; border-radius: 5px; font-weight: bold;
+                                                  text-decoration: none; margin-bottom: 15px; background-color: #1a1a1a;">
+                                            📥 VISUALIZAR DOCUMENTAÇÃO ANEXADA (PDF)
+                                        </a>
+                                        ''', unsafe_allow_html=True)
+                                        st.caption("⚠️ **Atenção SAME:** Baixe e arquive esta documentação em seu sistema interno agora. Por segurança de dados, os arquivos serão sumariamente apagados da nuvem SISAFA ao confirmar o agendamento.")
+
+                                    if papel == "OFERTANTE (AVALIADOR)":
+                                        st.divider()
+                                        st.markdown("#### ⚙️ Decisão do SAME")
+                                        c_btn1, c_btn2 = st.columns(2)
+                                        
+                                        if c_btn1.button("✅ DOCUMENTOS CORRETOS (AGENDAR)", key=f"agendar_{id_dem}", use_container_width=True):
+                                            with st.spinner("Confirmando agendamento e expurgando arquivos..."):
+                                                # REGRA DE NEGÓCIO 1 E 2: Avança o status e DELETA o PDF da nuvem definindo como None (NULL no banco)
+                                                supabase.table("demandas").update({
+                                                    "status": 5,
+                                                    "url_pdf_temporario": None 
+                                                }).eq("id_demanda", id_dem).execute()
+                                                
+                                                supabase.table("logs_demandas").insert({"id_demanda": id_dem, "status_anterior": 4, "status_novo": 5, "cpf_operador": st.session_state.user_nip}).execute()
+                                                st.rerun()
+                                                
+                                        if c_btn2.button("❌ INCONSISTÊNCIA (DEVOLVER)", key=f"canc_same_{id_dem}", use_container_width=True):
+                                            with st.spinner("Devolvendo demanda para correção..."):
+                                                supabase.table("demandas").update({"status": 3}).eq("id_demanda", id_dem).execute()
+                                                supabase.table("logs_demandas").insert({"id_demanda": id_dem, "status_anterior": 4, "status_novo": 3, "cpf_operador": st.session_state.user_nip}).execute()
+                                                st.rerun()
+
+                                # =====================================
+                                # STATUS 5: AGENDADA (Monitoramento de Comparecimento)
+                                # =====================================
+                                elif status_atual == 5:
+                                    if papel == "OFERTANTE (AVALIADOR)":
+                                        st.success("📅 Consulta agendada. Confirme o desfecho após a data da marcação.")
+                                        st.divider()
+                                        st.markdown("#### 🩺 Desfecho do Atendimento")
+                                        
+                                        c_btn1, c_btn2 = st.columns(2)
+                                        if c_btn1.button("✅ PACIENTE COMPARECEU", key=f"comp_{id_dem}", use_container_width=True):
+                                            with st.spinner("Registrando conclusão..."):
+                                                supabase.table("demandas").update({"status": 7}).eq("id_demanda", id_dem).execute()
+                                                supabase.table("logs_demandas").insert({"id_demanda": id_dem, "status_anterior": 5, "status_novo": 7, "cpf_operador": st.session_state.user_nip}).execute()
+                                                st.rerun()
+                                                
+                                        if c_btn2.button("❌ PACIENTE NÃO COMPARECEU", key=f"absent_{id_dem}", use_container_width=True):
+                                            with st.spinner("Registrando absenteísmo..."):
+                                                supabase.table("demandas").update({"status": 6}).eq("id_demanda", id_dem).execute()
+                                                supabase.table("logs_demandas").insert({"id_demanda": id_dem, "status_anterior": 5, "status_novo": 6, "cpf_operador": st.session_state.user_nip}).execute()
+                                                st.rerun()
+                                    else:
+                                        st.success("✅ Consulta confirmada! O paciente deverá comparecer na data agendada.")
+
+                                # =====================================
+                                # STATUS 6 E 7: DESFECHOS FINAIS
+                                # =====================================
+                                elif status_atual == 6:
+                                    st.error("❌ Processo encerrado por ABSENTEÍSMO. O paciente não compareceu à consulta.")
+                                elif status_atual == 7:
+                                    st.info("✅ Processo CONCLUÍDO. Consulta realizada com sucesso pelo Hospital Ofertante.")
 
                         # ==========================================
-                        # LADO DIREITO: CHAT TÁTICO INTEGRADO
+                        # LADO DIREITO: CHAT INTEGRADO
                         # ==========================================
                         with col_chat:
                             st.markdown("#### 💬 Chat da Demanda")
@@ -928,6 +987,9 @@ else:
 
         except Exception as e:
             st.error(f"Erro ao carregar o painel de tramitação: {e}")
+
+
+            
 
     with tab_indicadores:
         st.subheader("Painel de Indicadores (Tempo de Resposta)")
