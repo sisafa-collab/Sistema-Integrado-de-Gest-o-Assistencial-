@@ -743,7 +743,7 @@ else:
                                                     pdf.set_text_color(255, 255, 255)
                                                     pdf.set_font("Arial", 'B', 15)
                                                     pdf.cell(0, 14, "  INFORMAÇÕES CADASTRAIS", border=0, ln=True, align='L', fill=True)
-                                                    pdf.cell(0, 14, "  ⚠️ CONFIRA TODAS AS INFORMAÇÕES ANTES DE ANEXAR ESTE ARQUIVO NO SIGA ⚠️", border=0, ln=True, align='L', fill=True)
+                                                    pdf.cell(0, 14, "  CONFIRA TODAS AS INFORMAÇÕES ANTES DE ANEXAR ESTE ARQUIVO NO SIGA", border=0, ln=True, align='L', fill=True)
 
                                                     # Subtítulo alinhado à direita
                                                     pdf.set_text_color(120, 120, 120)
