@@ -11,7 +11,7 @@ from fpdf import FPDF
 import plotly.graph_objects as go
 import plotly.express as px
 
-# --- CONEXÃO COM O BANCO DE DADOS SUPABASE ---
+# --- CONEXÃO COM O BANCO DE DADOS  ---
 @st.cache_resource
 def iniciar_conexao():
     url = st.secrets["SUPABASE_URL"]
@@ -37,16 +37,15 @@ st.markdown("""
         background-color: #231f20 !important;
     }
 
-    /* 🔎 2. HIERARQUIA DE TEXTO E CORES (A MÁGICA DA LEITURA LIMPA) */
+    /* 🔎 2. HIERARQUIA DE TEXTO E CORES  */
     
-    /* Textos comuns em cinza claro sólido (Sem neon para não cansar a vista) */
     p, label, li, span {
         font-size: 1.15rem !important; 
         color: #E0E0E0 !important; /* Cinza claro elegante */
         text-shadow: none !important; 
     }
     
-    /* Apenas os títulos acendem em Verde Neon SISAFA */
+    /* Apenas os títulos acendem em Verde Neon */
     h1, h2, h3, h4, h5, h6 {
         color: #00E676 !important;
         text-shadow: 0 0 8px rgba(0, 230, 118, 0.4) !important;
@@ -58,7 +57,7 @@ st.markdown("""
     h3 { font-size: 1.8rem !important; }
     h4, h5, h6 { font-size: 1.5rem !important; }
 
-    /* 🔎 3. LINHAS DIVISÓRIAS NEON (st.divider) */
+    /* 🔎 3. LINHAS DIVISÓRIAS (st.divider) */
     hr {
         border-top: 1px solid rgba(0, 230, 118, 0.4) !important;
         box-shadow: 0 0 8px rgba(0, 230, 118, 0.2) !important;
@@ -74,7 +73,7 @@ st.markdown("""
         margin-bottom: 15px;
     }
 
-    /* 🔎 5. AUMENTO DAS ABAS (TABS) E ÍCONES DELAS */
+    /* 🔎 5. AUMENTO DAS ABAS (TABS) E ÍCONES  */
     .stTabs [data-baseweb="tab-list"] {
         gap: 24px;
     }
@@ -1040,7 +1039,7 @@ else:
                     if not df_chat.empty:
                         df_chat = df_chat[df_chat['id_demanda'].isin(lista_ids_demandas)]
                     
-                    # --- CÁLCULO DOS KPIS TÁTICOS ---
+                    # --- CÁLCULO DOS KPIS  ---
                     total_demandas = len(df_demandas)
                     
                     # Desfechos consolidados
@@ -1060,7 +1059,7 @@ else:
                     na_fila = len(df_demandas[df_demandas['status'].isin([3, 4])])
 
                     # =================================================================
-                    # 3. RENDERIZAÇÃO DOS CARDS NEON
+                    # 3. RENDERIZAÇÃO 
                     # =================================================================
                     c1, c2, c3, c4 = st.columns(4)
                     
