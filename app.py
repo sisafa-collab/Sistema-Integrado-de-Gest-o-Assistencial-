@@ -877,17 +877,17 @@ else:
                                             else:
                                                 st.error("⚠️ Por favor, anexe ao menos um arquivo PDF na seção 'DOCUMENTAÇÃO OBRIGATÓRIA' antes de enviar.")
 
-                                # --- REGRA DE NEGÓCIO: STATUS 3 EM DIANTE (Fluxo SAME e Desfecho) ---
-                                elif status_atual >= 3:
-                                    url_pdf = row.get('url_pdf_temporario')
-                                    
-                                    # STATUS 3: PROTOCOLADA (Aguardando ou Devolvida)
-                                    if status_atual == 3:
-                                        if papel == "SOLICITANTE":
-                                            st.warning("⚠️ Esta demanda requer que você protocole ou corrija a documentação.")
-                                               
-                                        else:
-                                            st.info("⏳ Aguardando o Hospital Solicitante enviar ou corrigir os documentos anexos.")
+                            # --- REGRA DE NEGÓCIO: STATUS 3 EM DIANTE (Fluxo SAME e Desfecho) ---
+                            elif status_atual >= 3:
+                                url_pdf = row.get('url_pdf_temporario')
+                                
+                                # STATUS 3: PROTOCOLADA (Aguardando ou Devolvida)
+                                if status_atual == 3:
+                                    if papel == "SOLICITANTE":
+                                        st.warning("⚠️ Esta demanda requer que você protocole ou corrija a documentação.")
+                                           
+                                    else:
+                                        st.info("⏳ Aguardando o Hospital Solicitante enviar ou corrigir os documentos anexos.")
 
                                 # =====================================
                                 # STATUS 4: EM ANÁLISE (Apreciação do Ofertante)
