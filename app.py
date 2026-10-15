@@ -840,134 +840,133 @@ else:
                                             else:
                                                 st.warning("Preencha ao menos o Nome do Paciente e escolha o Horário para gerar o documento.")
 
-
+                                    # =========================================================================
+                                    # UPLOAD INICIAL (Aparece no Status 2)
+                                    # =========================================================================
                                     st.markdown("<h5 style='color: #00E676; margin-top: 15px;'> DOCUMENTAÇÃO OBRIGATÓRIA</h5>", unsafe_allow_html=True)
+                                    
                                     pdf_files = st.file_uploader(
                                         "Anexar (1) Pedido Médico, (2) Formulário de informações cadastrais preenchido, e (3) a Guia (PDF)",
                                         type=["pdf"],
-                                        accept_multiple_files=True,  # <-- PERMITE MÚLTIPLOS ARQUIVOS
+                                        accept_multiple_files=True,
                                         key=f"pdf_{id_dem}"
                                     )
                                     
                                     st.markdown("<br>", unsafe_allow_html=True)
 
-                                    # 1. RENDERIZA O BOTÃO NA TELA (Indentação corrigida)
                                     if st.button("📤 ENVIAR PARA ANÁLISE", key=f"env_analise_{id_dem}", use_container_width=True):
-                                        # 2. VALIDA OS ARQUIVOS APENAS APÓS O CLIQUE NO BOTÃO
-                                        if 'pdf_files' in locals() and pdf_files:
+                                        if pdf_files:
                                             with st.spinner("Enviando documentações para o SAME ofertante..."):
                                                 urls_salvas = []
                                                 
-                                                # Loop para salvar cada um dos PDFs enviados no bucket 'documentos_siga'
                                                 for idx, pdf in enumerate(pdf_files):
                                                     caminho_storage = f"demandas/{id_dem}/doc_{idx}_{pdf.name}"
-                                                    
-                                                    # UPLOAD FÍSICO PARA O SUPABASE
-                                                    supabase.storage.from_("documentos_siga").upload(caminho_storage, pdf.getvalue())
-                                                    
-                                                    # CAPTURA DA URL PÚBLICA DO ARQUIVO
+                                                    supabase.storage.from_("documentos_siga").upload(caminho_storage, pdf.getvalue(), file_options={"upsert": "true"})
                                                     url_publica = supabase.storage.from_("documentos_siga").get_public_url(caminho_storage)
                                                     urls_salvas.append(url_publica)
                                                 
-                                                # Junta todas as URLs separadas por um delimitador (" | ") para salvar na mesma coluna
                                                 string_urls = " | ".join(urls_salvas)
 
-                                                # Atualiza o status da demanda no banco de dados COM OS LINKS GERADOS
-                                                supabase.table("demandas").update({
-                                                    "status": 4,
-                                                    "url_pdf_temporario": string_urls
-                                                }).eq("id_demanda", id_dem).execute()
-                                                
-                                                supabase.table("logs_demandas").insert({
-                                                    "id_demanda": id_dem,
-                                                    "status_anterior": 3,
-                                                    "status_novo": 4,
-                                                    "cpf_operador": st.session_state.user_nip
-                                                }).execute()
+                                                supabase.table("demandas").update({"status": 4, "url_pdf_temporario": string_urls}).eq("id_demanda", id_dem).execute()
+                                                supabase.table("logs_demandas").insert({"id_demanda": id_dem, "status_anterior": status_atual, "status_novo": 4, "cpf_operador": st.session_state.user_nip}).execute()
                                                 
                                                 st.rerun()
                                         else:
                                             st.error("⚠️ Por favor, anexe ao menos um arquivo PDF na seção 'DOCUMENTAÇÃO OBRIGATÓRIA' antes de enviar.")
 
-                            # --- REGRA DE NEGÓCIO: STATUS 3 EM DIANTE (Fluxo SAME e Desfecho) ---
-                            elif status_atual >= 3:
-                                url_pdf = row.get('url_pdf_temporario')
-                                
-                                # STATUS 3: PROTOCOLADA (Aguardando ou Devolvida)
-                                if status_atual == 3:
-                                    if papel == "SOLICITANTE":
-                                        st.warning("⚠️ Esta demanda requer que você protocole ou corrija a documentação.")
-                                    else:
-                                        st.info("⏳ Aguardando o Hospital Solicitante enviar ou corrigir os documentos anexos.")
-    
-                                # =====================================
-                                # STATUS 4: EM ANÁLISE (Apreciação do Ofertante)
-                                # =====================================
-                                elif status_atual == 4:
-                                    st.info("📄 Documentação protocolada. Em fase de análise pelo SAME ofertante.")
+                                # --- REGRA DE NEGÓCIO: STATUS 3 EM DIANTE (Fluxo SAME e Desfecho) ---
+                                elif status_atual >= 3:
+                                    url_pdf = row.get('url_pdf_temporario')
                                     
-                                    # CUSTÓDIA DA INFORMAÇÃO: Apenas o Ofertante vê os links de download
-                                    if url_pdf and papel == "OFERTANTE (AVALIADOR)":
-                                        # Divide as URLs caso existam múltiplos arquivos anexados
-                                        lista_urls = url_pdf.split(" | ")
-                                        
-                                        for idx_url, url in enumerate(lista_urls):
-                                            st.markdown(f'''
-                                            <a href="{url}" target="_blank"
-                                               style="display: block; text-align: center; border: 2px solid #9C27B0;
-                                                      color: #9C27B0; padding: 10px; border-radius: 5px; font-weight: bold;
-                                                      text-decoration: none; margin-bottom: 10px; background-color: #1a1a1a;">
-                                                📥 VISUALIZAR DOCUMENTO ANEXADO {idx_url + 1}
-                                            </a>
-                                            ''', unsafe_allow_html=True)
+                                    # =========================================================================
+                                    # STATUS 3: DEVOLVIDA PARA CORREÇÃO (Aparece a caixa de novo)
+                                    # =========================================================================
+                                    if status_atual == 3:
+                                        if papel == "SOLICITANTE":
+                                            st.warning("⚠️ Esta demanda requer que você protocole ou corrija a documentação abaixo.")
                                             
-                                        st.caption("⚠️ **Atenção SAME:** Baixe e arquive esta documentação em seu sistema interno agora. Por segurança de dados, os arquivos serão sumariamente apagados da nuvem SISAFA ao confirmar o agendamento.")
+                                            pdf_files_correcao = st.file_uploader(
+                                                "Reenviar (1) Pedido Médico, (2) Formulário e (3) Guia (PDF)",
+                                                type=["pdf"],
+                                                accept_multiple_files=True,
+                                                key=f"pdf_correcao_{id_dem}"
+                                            )
+                                            
+                                            st.markdown("<br>", unsafe_allow_html=True)
+                                            
+                                            if st.button("📤 REENVIAR PARA ANÁLISE", key=f"env_correcao_{id_dem}", use_container_width=True):
+                                                if pdf_files_correcao:
+                                                    with st.spinner("Reenviando documentações para o SAME ofertante..."):
+                                                        urls_salvas = []
+                                                        
+                                                        for idx, pdf in enumerate(pdf_files_correcao):
+                                                            caminho_storage = f"demandas/{id_dem}/doc_{idx}_{pdf.name}"
+                                                            supabase.storage.from_("documentos_siga").upload(caminho_storage, pdf.getvalue(), file_options={"upsert": "true"})
+                                                            url_publica = supabase.storage.from_("documentos_siga").get_public_url(caminho_storage)
+                                                            urls_salvas.append(url_publica)
+                                                        
+                                                        string_urls = " | ".join(urls_salvas)
+
+                                                        supabase.table("demandas").update({"status": 4, "url_pdf_temporario": string_urls}).eq("id_demanda", id_dem).execute()
+                                                        supabase.table("logs_demandas").insert({"id_demanda": id_dem, "status_anterior": 3, "status_novo": 4, "cpf_operador": st.session_state.user_nip}).execute()
+                                                        
+                                                        st.rerun()
+                                                else:
+                                                    st.error("⚠️ Por favor, anexe os documentos corrigidos antes de reenviar.")
+                                        else:
+                                            st.info("⏳ Aguardando o Hospital Solicitante enviar ou corrigir os documentos anexos.")
     
-                                    if papel == "OFERTANTE (AVALIADOR)":
-                                        st.divider()
-                                        st.markdown("#### ⚙️ Decisão do SAME")
-                                        c_btn1, c_btn2 = st.columns(2)
+                                    # =====================================
+                                    # STATUS 4: EM ANÁLISE (Apreciação do Ofertante)
+                                    # =====================================
+                                    elif status_atual == 4:
+                                        st.info("📄 Documentação protocolada. Em fase de análise pelo SAME ofertante.")
                                         
-                                        if c_btn1.button("✅ DOCUMENTOS CORRETOS (AGENDAR)", key=f"agendar_{id_dem}", use_container_width=True):
-                                            with st.spinner("Confirmando agendamento e expurgando arquivos do servidor..."):
+                                        # CUSTÓDIA DA INFORMAÇÃO: Apenas o Ofertante vê os links de download
+                                        if url_pdf and papel == "OFERTANTE (AVALIADOR)":
+                                            lista_urls = url_pdf.split(" | ")
+                                            
+                                            for idx_url, url in enumerate(lista_urls):
+                                                st.markdown(f'''
+                                                <a href="{url}" target="_blank"
+                                                   style="display: block; text-align: center; border: 2px solid #9C27B0;
+                                                          color: #9C27B0; padding: 10px; border-radius: 5px; font-weight: bold;
+                                                          text-decoration: none; margin-bottom: 10px; background-color: #1a1a1a;">
+                                                    📥 VISUALIZAR DOCUMENTO ANEXADO {idx_url + 1}
+                                                </a>
+                                                ''', unsafe_allow_html=True)
                                                 
-                                                # MANOBRA DE EXPURGO: Lista e deleta fisicamente todos os arquivos da pasta da demanda
-                                                try:
-                                                    pasta_demanda = f"demandas/{id_dem}"
-                                                    arquivos_na_pasta = supabase.storage.from_("documentos_siga").list(pasta_demanda)
+                                            st.caption("⚠️ **Atenção SAME:** Baixe e arquive esta documentação em seu sistema interno agora. Por segurança de dados, os arquivos serão sumariamente apagados da nuvem SISAFA ao confirmar o agendamento.")
+        
+                                        if papel == "OFERTANTE (AVALIADOR)":
+                                            st.divider()
+                                            st.markdown("#### ⚙️ Decisão do SAME")
+                                            c_btn1, c_btn2 = st.columns(2)
+                                            
+                                            if c_btn1.button("✅ DOCUMENTOS CORRETOS (AGENDAR)", key=f"agendar_{id_dem}", use_container_width=True):
+                                                with st.spinner("Confirmando agendamento e expurgando arquivos do servidor..."):
                                                     
-                                                    if arquivos_na_pasta:
-                                                        # Monta o caminho exato de cada arquivo achado na pasta e envia o comando remove
-                                                        caminhos_deletar = [f"{pasta_demanda}/{arq['name']}" for arq in arquivos_na_pasta if arq['name'] != '.emptyFolderPlaceholder']
-                                                        if caminhos_deletar:
-                                                            supabase.storage.from_("documentos_siga").remove(caminhos_deletar)
-                                                except Exception as e:
-                                                    st.toast(f"Aviso no expurgo: {e}")
-    
-                                                # REGRA DE NEGÓCIO 1 E 2: Avança o status e anula o link no banco
-                                                supabase.table("demandas").update({
-                                                    "status": 5,
-                                                    "url_pdf_temporario": None 
-                                                }).eq("id_demanda", id_dem).execute()
-                                                
-                                                supabase.table("logs_demandas").insert({
-                                                    "id_demanda": id_dem, 
-                                                    "status_anterior": 4, 
-                                                    "status_novo": 5, 
-                                                    "cpf_operador": st.session_state.user_nip
-                                                }).execute()
-                                                st.rerun()
-                                                
-                                        if c_btn2.button("❌ INCONSISTÊNCIA (DEVOLVER)", key=f"canc_same_{id_dem}", use_container_width=True):
-                                            with st.spinner("Devolvendo demanda para correção..."):
-                                                supabase.table("demandas").update({"status": 3}).eq("id_demanda", id_dem).execute()
-                                                supabase.table("logs_demandas").insert({
-                                                    "id_demanda": id_dem, 
-                                                    "status_anterior": 4, 
-                                                    "status_novo": 3, 
-                                                    "cpf_operador": st.session_state.user_nip
-                                                }).execute()
-                                                st.rerun()
+                                                    # MANOBRA DE EXPURGO
+                                                    try:
+                                                        pasta_demanda = f"demandas/{id_dem}"
+                                                        arquivos_na_pasta = supabase.storage.from_("documentos_siga").list(pasta_demanda)
+                                                        
+                                                        if arquivos_na_pasta:
+                                                            caminhos_deletar = [f"{pasta_demanda}/{arq['name']}" for arq in arquivos_na_pasta if arq['name'] != '.emptyFolderPlaceholder']
+                                                            if caminhos_deletar:
+                                                                supabase.storage.from_("documentos_siga").remove(caminhos_deletar)
+                                                    except Exception as e:
+                                                        st.toast(f"Aviso no expurgo: {e}")
+        
+                                                    supabase.table("demandas").update({"status": 5, "url_pdf_temporario": None}).eq("id_demanda", id_dem).execute()
+                                                    supabase.table("logs_demandas").insert({"id_demanda": id_dem, "status_anterior": 4, "status_novo": 5, "cpf_operador": st.session_state.user_nip}).execute()
+                                                    st.rerun()
+                                                    
+                                            if c_btn2.button("❌ INCONSISTÊNCIA (DEVOLVER)", key=f"canc_same_{id_dem}", use_container_width=True):
+                                                with st.spinner("Devolvendo demanda para correção..."):
+                                                    supabase.table("demandas").update({"status": 3}).eq("id_demanda", id_dem).execute()
+                                                    supabase.table("logs_demandas").insert({"id_demanda": id_dem, "status_anterior": 4, "status_novo": 3, "cpf_operador": st.session_state.user_nip}).execute()
+                                                    st.rerun()
 
                                 # =====================================
                                 # STATUS 5: AGENDADA (Monitoramento de Comparecimento)
