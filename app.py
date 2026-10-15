@@ -841,41 +841,41 @@ else:
                                                 st.warning("Preencha ao menos o Nome do Paciente e escolha o Horário para gerar o documento.")
 
 
-                                        st.markdown("<h5 style='color: #00E676; margin-top: 15px;'> DOCUMENTAÇÃO OBRIGATÓRIA</h5>", unsafe_allow_html=True)
-                                        pdf_files = st.file_uploader(
-                                            "Anexar (1) Pedido Médico, (2) Formulário de informações cadastrais preenchido, e (3) a Guia (PDF)",
-                                            type=["pdf"],
-                                            accept_multiple_files=True,  # <-- PERMITE MÚLTIPLOS ARQUIVOS
-                                            key=f"pdf_{id_dem}"
-                                        )
-                                        
-                                        st.markdown("<br>", unsafe_allow_html=True)
+                                    st.markdown("<h5 style='color: #00E676; margin-top: 15px;'> DOCUMENTAÇÃO OBRIGATÓRIA</h5>", unsafe_allow_html=True)
+                                    pdf_files = st.file_uploader(
+                                        "Anexar (1) Pedido Médico, (2) Formulário de informações cadastrais preenchido, e (3) a Guia (PDF)",
+                                        type=["pdf"],
+                                        accept_multiple_files=True,  # <-- PERMITE MÚLTIPLOS ARQUIVOS
+                                        key=f"pdf_{id_dem}"
+                                    )
+                                    
+                                    st.markdown("<br>", unsafe_allow_html=True)
 
-                                        # 1. RENDERIZA O BOTÃO NA TELA (Indentação corrigida)
-                                        if st.button("📤 ENVIAR PARA ANÁLISE", key=f"env_analise_{id_dem}", use_container_width=True):
-                                            # 2. VALIDA OS ARQUIVOS APENAS APÓS O CLIQUE NO BOTÃO
-                                            if 'pdf_files' in locals() and pdf_files:
-                                                with st.spinner("Enviando documentações para o SAME ofertante..."):
-                                                    urls_salvas = []
-                                                    
-                                                    # Loop para salvar cada um dos PDFs enviados
-                                                    for idx, pdf in enumerate(pdf_files):
-                                                        caminho_storage = f"demandas/{id_dem}/doc_{idx}_{pdf.name}"
-                                                        # Exemplo de Upload para o Storage:
-                                                        # supabase.storage.from_("documentos").upload(caminho_storage, pdf.getvalue())
-                                                    
-                                                    # Atualiza o status da demanda no banco de dados
-                                                    supabase.table("demandas").update({"status": 4}).eq("id_demanda", id_dem).execute()
-                                                    supabase.table("logs_demandas").insert({
-                                                        "id_demanda": id_dem,
-                                                        "status_anterior": 3,
-                                                        "status_novo": 4,
-                                                        "cpf_operador": st.session_state.user_nip
-                                                    }).execute()
-                                                    
-                                                    st.rerun()
-                                            else:
-                                                st.error("⚠️ Por favor, anexe ao menos um arquivo PDF na seção 'DOCUMENTAÇÃO OBRIGATÓRIA' antes de enviar.")
+                                    # 1. RENDERIZA O BOTÃO NA TELA (Indentação corrigida)
+                                    if st.button("📤 ENVIAR PARA ANÁLISE", key=f"env_analise_{id_dem}", use_container_width=True):
+                                        # 2. VALIDA OS ARQUIVOS APENAS APÓS O CLIQUE NO BOTÃO
+                                        if 'pdf_files' in locals() and pdf_files:
+                                            with st.spinner("Enviando documentações para o SAME ofertante..."):
+                                                urls_salvas = []
+                                                
+                                                # Loop para salvar cada um dos PDFs enviados
+                                                for idx, pdf in enumerate(pdf_files):
+                                                    caminho_storage = f"demandas/{id_dem}/doc_{idx}_{pdf.name}"
+                                                    # Exemplo de Upload para o Storage:
+                                                    # supabase.storage.from_("documentos").upload(caminho_storage, pdf.getvalue())
+                                                
+                                                # Atualiza o status da demanda no banco de dados
+                                                supabase.table("demandas").update({"status": 4}).eq("id_demanda", id_dem).execute()
+                                                supabase.table("logs_demandas").insert({
+                                                    "id_demanda": id_dem,
+                                                    "status_anterior": 3,
+                                                    "status_novo": 4,
+                                                    "cpf_operador": st.session_state.user_nip
+                                                }).execute()
+                                                
+                                                st.rerun()
+                                        else:
+                                            st.error("⚠️ Por favor, anexe ao menos um arquivo PDF na seção 'DOCUMENTAÇÃO OBRIGATÓRIA' antes de enviar.")
 
                             # --- REGRA DE NEGÓCIO: STATUS 3 EM DIANTE (Fluxo SAME e Desfecho) ---
                             elif status_atual >= 3:
