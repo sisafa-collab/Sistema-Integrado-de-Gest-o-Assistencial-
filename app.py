@@ -850,7 +850,7 @@ else:
                                         )
                                         
                                         st.markdown("<br>", unsafe_allow_html=True)
-                                        
+
                             # --- REGRA DE NEGÓCIO: STATUS 3 EM DIANTE (Fluxo SAME e Desfecho) ---
                             elif status_atual >= 3:
                                 url_pdf = row.get('url_pdf_temporario')
@@ -860,24 +860,20 @@ else:
                                     if papel == "SOLICITANTE":
                                         st.warning("⚠️ Esta demanda requer que você protocole ou corrija a documentação.")
                                         
+                                        # 1. RENDERIZA O BOTÃO NA TELA (Indentação corrigida)
                                         if st.button("📤 ENVIAR PARA ANÁLISE", key=f"env_analise_{id_dem}", use_container_width=True):
-                                            # Valida se o usuário realmente selecionou ao menos um arquivo
-                                            if pdf_files:
+                                            # 2. VALIDA OS ARQUIVOS APENAS APÓS O CLIQUE NO BOTÃO
+                                            if 'pdf_files' in locals() and pdf_files:
                                                 with st.spinner("Enviando documentações para o SAME ofertante..."):
                                                     urls_salvas = []
                                                     
                                                     # Loop para salvar cada um dos PDFs enviados
                                                     for idx, pdf in enumerate(pdf_files):
                                                         caminho_storage = f"demandas/{id_dem}/doc_{idx}_{pdf.name}"
-                                                        
-                                                        # Exemplo de Upload para o Bucket 'documentos' do Supabase Storage
+                                                        # Exemplo de Upload para o Storage:
                                                         # supabase.storage.from_("documentos").upload(caminho_storage, pdf.getvalue())
-                                                        # url_publica = supabase.storage.from_("documentos").get_public_url(caminho_storage)
-                                                        # urls_salvas.append(url_publica)
                                                     
-                                                    # Atualiza a tabela no banco com a lista de URLs (ou lista formatada em texto/JSON)
-                                                    # string_urls = ";".join(urls_salvas)
-                                                    
+                                                    # Atualiza o status da demanda no banco de dados
                                                     supabase.table("demandas").update({"status": 4}).eq("id_demanda", id_dem).execute()
                                                     supabase.table("logs_demandas").insert({
                                                         "id_demanda": id_dem,
@@ -888,7 +884,7 @@ else:
                                                     
                                                     st.rerun()
                                             else:
-                                                st.error("⚠️ Por favor, anexe ao menos um arquivo PDF antes de enviar.")
+                                                st.error("⚠️ Por favor, anexe ao menos um arquivo PDF na seção 'DOCUMENTAÇÃO OBRIGATÓRIA' antes de enviar.")
                                     else:
                                         st.info("⏳ Aguardando o Hospital Solicitante enviar ou corrigir os documentos anexos.")
 
