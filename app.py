@@ -842,27 +842,53 @@ else:
 
 
                                         st.markdown("<h5 style='color: #00E676; margin-top: 15px;'> DOCUMENTAÇÃO OBRIGATÓRIA</h5>", unsafe_allow_html=True)
-                                        pdf_file = st.file_uploader("Anexar (1) Pedido Médico, (2) Formulário de informações cadastrais preenchido, e (3) a Guia (PDF)", type=["pdf"], key=f"pdf_{id_dem}")
+                                        pdf_files = st.file_uploader(
+                                            "Anexar (1) Pedido Médico, (2) Formulário de informações cadastrais preenchido, e (3) a Guia (PDF)",
+                                            type=["pdf"],
+                                            accept_multiple_files=True,  # <-- PERMITE MÚLTIPLOS ARQUIVOS
+                                            key=f"pdf_{id_dem}"
+                                        )
                                         
                                         st.markdown("<br>", unsafe_allow_html=True)
                                         
-
                             # --- REGRA DE NEGÓCIO: STATUS 3 EM DIANTE (Fluxo SAME e Desfecho) ---
                             elif status_atual >= 3:
                                 url_pdf = row.get('url_pdf_temporario')
-                                # =====================================
+                                
                                 # STATUS 3: PROTOCOLADA (Aguardando ou Devolvida)
-                                # =====================================
                                 if status_atual == 3:
                                     if papel == "SOLICITANTE":
                                         st.warning("⚠️ Esta demanda requer que você protocole ou corrija a documentação.")
                                         
-                                        # Simulação do botão de envio que o Solicitante usa após subir os PDFs
                                         if st.button("📤 ENVIAR PARA ANÁLISE", key=f"env_analise_{id_dem}", use_container_width=True):
-                                            with st.spinner("Enviando documentação para o SAME ofertante..."):
-                                                supabase.table("demandas").update({"status": 4}).eq("id_demanda", id_dem).execute()
-                                                supabase.table("logs_demandas").insert({"id_demanda": id_dem, "status_anterior": 3, "status_novo": 4, "cpf_operador": st.session_state.user_nip}).execute()
-                                                st.rerun()
+                                            # Valida se o usuário realmente selecionou ao menos um arquivo
+                                            if pdf_files:
+                                                with st.spinner("Enviando documentações para o SAME ofertante..."):
+                                                    urls_salvas = []
+                                                    
+                                                    # Loop para salvar cada um dos PDFs enviados
+                                                    for idx, pdf in enumerate(pdf_files):
+                                                        caminho_storage = f"demandas/{id_dem}/doc_{idx}_{pdf.name}"
+                                                        
+                                                        # Exemplo de Upload para o Bucket 'documentos' do Supabase Storage
+                                                        # supabase.storage.from_("documentos").upload(caminho_storage, pdf.getvalue())
+                                                        # url_publica = supabase.storage.from_("documentos").get_public_url(caminho_storage)
+                                                        # urls_salvas.append(url_publica)
+                                                    
+                                                    # Atualiza a tabela no banco com a lista de URLs (ou lista formatada em texto/JSON)
+                                                    # string_urls = ";".join(urls_salvas)
+                                                    
+                                                    supabase.table("demandas").update({"status": 4}).eq("id_demanda", id_dem).execute()
+                                                    supabase.table("logs_demandas").insert({
+                                                        "id_demanda": id_dem,
+                                                        "status_anterior": 3,
+                                                        "status_novo": 4,
+                                                        "cpf_operador": st.session_state.user_nip
+                                                    }).execute()
+                                                    
+                                                    st.rerun()
+                                            else:
+                                                st.error("⚠️ Por favor, anexe ao menos um arquivo PDF antes de enviar.")
                                     else:
                                         st.info("⏳ Aguardando o Hospital Solicitante enviar ou corrigir os documentos anexos.")
 
